@@ -76,4 +76,15 @@ Think of it like this:
 * `@OneToMany LAZY` → You have a **box**, the box is there but the **stuff inside the box** isn’t loaded yet.
 * `getReference()` → You don’t even have the **box yet**, just a **placeholder**; the box appears only when you try to open it.
 
+JSP → Placed under src/main/webapp/WEB-INF/views/
+Thymeleaf → Placed under src/main/resources/templates/
 
+Advantages of @Builder
+
+Readability – Each field is explicitly named.
+
+Optional fields – You can skip fields you don’t want to set.
+
+Immutability friendly – Often used with @Getter and final fields.
+
+Avoids long constructors – No need to write multiple overloaded constructors.
