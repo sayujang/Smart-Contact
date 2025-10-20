@@ -1,6 +1,7 @@
 package com.smartcontact.scm.controllers;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/user")//only sets a basepath doesn't create endpoint
 public class UserController {
     
-   @RequestMapping("/dashboard")
+   @GetMapping("/dashboard")
    public String userDashboard() {
        return "user/dashboard";
    }
-   @RequestMapping("/profile")
+   @GetMapping("/profile")
    public String userProfile() {
        return "user/profile";
    }

@@ -7,8 +7,10 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.smartcontact.scm.Helpers.AppConstants;
 import com.smartcontact.scm.Helpers.ResourceNotFoundException;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.repositories.UserRepo;
@@ -16,16 +18,33 @@ import com.smartcontact.scm.services.UserService;
 
 @Service
 public class userServiceImpl implements UserService {
+    //define password encoder
+    private final PasswordEncoder passwordEncoder;
+    private Logger logger=LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     private  UserRepo userRepo;//field injection
-    private Logger logger=LoggerFactory.getLogger(this.getClass());
+    
+
+    //constructor injection
+    userServiceImpl(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
     @Override
     public User saveUser(User user) {
+        //create random userid before saving
         String userId=UUID.randomUUID().toString();
         user.setUserId(userId);
+        //encrypt the password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        //assign role of user
+        user.setRoleList(List.of(AppConstants.ROLE_USER));
+        //log at info level
+        logger.info(user.getProvider().toString());//in enums tostring method converts enums to strings
+        //save the user
         return userRepo.save(user);
     }
-
+ 
     @Override
     public Optional<User> getUserById(String id) {
       return userRepo.findById(id);

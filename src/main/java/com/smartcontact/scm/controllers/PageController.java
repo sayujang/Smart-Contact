@@ -16,6 +16,9 @@ import com.smartcontact.scm.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @Controller
 public class PageController {
@@ -26,6 +29,14 @@ public class PageController {
     {
         this.userService=userService;
     }
+    @GetMapping("/")
+    public String index() {
+        return "redirect:/home";
+    }
+    public String getMethodName(@RequestParam String param) {
+        return new String();
+    }
+    
     @RequestMapping("/home")
     public String home(Model m)
     {

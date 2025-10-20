@@ -5,7 +5,54 @@
 </head>
 <body>
     <div id="content">
-        <h1>this is Login page</h1>
+       <div class="grid grid-cols-12">
+          <div class="col-span-4 md:col-span-2 lg:col-span-3 xl:col-span-4"></div>
+          <div class="col-span-12 md:col-span-8 lg:col-span-6 xl:col-span-4">
+            <!-- card code -->
+            <div href="#" class="block p-6 bg-white border-t-[10px] border border-green-700 rounded-xl shadow-sm hover:bg-gray-100 dark:bg-gray-800 dark:border-green-700 dark:hover:bg-gray-700">
+            <div th:replace="message::messagebox"></div> 
+            <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Login Here</h5>
+             <div class="text-red-600 text-center my-3" th:if="${param.error}">
+              Invalid username and password.
+            </div>
+            <div
+              class="text-green-600 text-center my-3"
+              th:if="${param.logout}"
+            >
+              You have been logged out.
+            </div>
+            <form  class="mt-5" method="post" th:action="@{/authenticate}" novalidate>
+              <!-- email -->
+               <div class="mb-5">
+    <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
+    <input name="email" type="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
+    <!-- <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email is required</p> -->
+  </div>
+              <!-- password -->
+               <div class="mb-5">
+    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">New password</label>
+    <input name="password" type="password" id="password"  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+    <!-- <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password is required</p> -->
+  </div>
+              <!-- button -->
+               <div class="mb-3 flex justify-center space-x-3">
+                <button
+                  type="submit"
+                  class="px-3 py-2 rounded bg-gray-800 hover:bg-gray text-white dark:bg-blue-800 dark:hover:bg-blue-800"
+                >
+                  Login
+                </button>
+                <button
+                  type="reset"
+                  class="px-3 py-2 rounded bg-orange-800 hover:bg-orange text-white dark:bg-orange-800 dark:hover:bg-orange-800"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
+            </div>
+          </div>
+        </div>
     </div>
     <script>
       console.log("login page");

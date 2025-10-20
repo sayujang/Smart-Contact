@@ -94,3 +94,19 @@ Spring Boot (with Thymeleaf) uses a View Resolver behind the scenes — by defau
 
 spring.thymeleaf.prefix = classpath:/templates/
 spring.thymeleaf.suffix = .html
+
+Full Login Flow (Simplified)
+
+User enters username + password in the login form.
+
+Spring Security intercepts it.
+
+It calls your AuthenticationProvider.
+
+That provider calls SecurityCustomUserDetailService.loadUserByUsername().
+
+That fetches user info from DB via UserRepo.
+
+Password is compared using BCryptPasswordEncoder.
+
+If valid → user is logged in and a session is created.

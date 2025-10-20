@@ -33,6 +33,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 @Table(name="users")
+//this implements userdetails to give spring security the details of username(email in this case) password and roles for authentication
 public class User implements UserDetails{
     @Id
     private String userId;
@@ -48,14 +49,18 @@ public class User implements UserDetails{
     private String profilePic;
     private String phoneNumber;
     @Getter(value=AccessLevel.NONE)
-    private boolean enabled=false;
+    private boolean enabled=true;
     private boolean emailVerified=false;
     private boolean phoneVerified=false;
     @Enumerated(value = EnumType.STRING)//tells jpa how to save enums in database
     private Providers provider=Providers.SELF;
     private String providerUserId;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch=FetchType.LAZY,orphanRemoval = true)
+
+    //Mapping relation between contact table
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch=FetchType.LAZY,orphanRemoval = true)//here orphan removal= true makes it possible to remove a row from contact table in the database as well(not only in in-memory) when user deletes one of his contacts casdetypeall means if one user(parent) is deleted/saved all his contacts are deleted/saved
     private List<Contact> contacts=new ArrayList<>();
+
+    //creates a new table as each user could have multiple roles
     @ElementCollection(fetch=FetchType.EAGER)
     private List<String> roleList=new ArrayList<>();
     @Override

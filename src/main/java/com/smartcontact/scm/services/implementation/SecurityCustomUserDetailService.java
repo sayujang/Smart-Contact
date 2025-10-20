@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.smartcontact.scm.repositories.UserRepo;
 
+//function to tell the spring security how to access the userrecord in database during login on the basis of email
 @Service
 public class SecurityCustomUserDetailService implements UserDetailsService{
     @Autowired
