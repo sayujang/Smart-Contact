@@ -88,3 +88,9 @@ Optional fields – You can skip fields you don’t want to set.
 Immutability friendly – Often used with @Getter and final fields.
 
 Avoids long constructors – No need to write multiple overloaded constructors.
+🧭 How Spring Finds That File
+
+Spring Boot (with Thymeleaf) uses a View Resolver behind the scenes — by default it’s configured like this:
+
+spring.thymeleaf.prefix = classpath:/templates/
+spring.thymeleaf.suffix = .html

@@ -3,6 +3,7 @@ package com.smartcontact.scm.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -14,6 +15,7 @@ import com.smartcontact.scm.forms.UserForm;
 import com.smartcontact.scm.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
 @Controller
 public class PageController {
@@ -55,16 +57,16 @@ public class PageController {
     public String registerPage(Model m)
     {
         UserForm userForm=new UserForm();
-        userForm.setName("xyz");
-        userForm.setEmail("xyz@gmail.com");
-        userForm.setPassword("12345");
-        userForm.setPhoneNumber("xxxxxxxxxx");
-        userForm.setAbout("I am excited to ...");
-        m.addAttribute("userinfo", userForm);
+        // userForm.setName("xyz");
+        // userForm.setEmail("xyz@gmail.com");
+        // userForm.setPassword("12345");
+        // userForm.setPhoneNumber("xxxxxxxxxx");
+        // userForm.setAbout("I am excited to ...");
+        m.addAttribute("userInfo", userForm);
         return "register";
     }
     @RequestMapping(value = "/do-register", method = RequestMethod.POST)
-    public String processRegister(@ModelAttribute UserForm userForm, HttpSession session)
+    public String processRegister(@Valid @ModelAttribute("userInfo") UserForm userForm,BindingResult result, HttpSession session)
     {
         System.out.println(userForm);
         // User user=User.builder()
@@ -74,6 +76,12 @@ public class PageController {
         // .about(userForm.getAbout())
         // .phoneNumber(userForm.getPhoneNumber())
         // .build();
+        //validate form data
+        if (result.hasErrors())
+        {
+            return "register";
+        }
+        //save to database
         User user=new User();
         user.setName(userForm.getName());
         user.setEmail(userForm.getEmail());

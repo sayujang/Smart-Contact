@@ -13,32 +13,37 @@
             <div th:replace="message::messagebox"></div> 
             <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Sign up here</h5>
             <p class="font-normal text-gray-700 dark:text-gray-400">Start managing contact on cloud</p>
-            <form th:action="@{'/do-register'}" method="post" class="mt-5" th:object="${userinfo}">
+            <form th:action="@{'/do-register'}" method="post" class="mt-5" th:object="${userInfo}" novalidate>
               <!-- name -->
               <div class="mb-5">
                 <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
                 <!-- here th:field automatically creates name="name" -->
                 <input type="text" id="name" th:field="*{name}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your name" required />
+                <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name is required</p>
               </div> 
               <!-- email -->
                <div class="mb-5">
     <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
     <input type="email" th:field="*{email}" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
+    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email is required</p>
   </div>
               <!-- password -->
                <div class="mb-5">
     <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">New password</label>
     <input type="password" id="password" th:field="*{password}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password is required</p>
   </div>
               <!-- phone number -->
                <div class="mb-5">
     <label for="contact" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact number</label>
     <input type="text" id="contact" th:field="*{phoneNumber}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}">Phone number is required</p>
   </div>
               <!-- about me -->
               <div class="mb-5">
 <label for="message" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Describe yourself</label>
 <textarea id="message" th:field="*{about}" rows="6" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Start here..."></textarea>
+<p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('about')}" th:errors="*{about}">About is required</p>
               </div>
               <!-- button -->
                <div class="mb-3 flex justify-center space-x-3">
