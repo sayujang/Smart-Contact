@@ -110,3 +110,48 @@ That fetches user info from DB via UserRepo.
 Password is compared using BCryptPasswordEncoder.
 
 If valid → user is logged in and a session is created.
+CSRF stands for Cross-Site Request Forgery.
+
+It’s a type of web attack where a malicious website tricks a logged-in user into performing an unwanted action on another site — without their knowledge.
+
+⚡ Example:
+
+Suppose a user is logged in to your site smartcontact.com.
+
+Now they visit a malicious site that secretly submits a form:
+
+<form action="https://smartcontact.com/do-logout" method="post">
+</form>
+<script>document.forms[0].submit();</script>
+
+
+If your app doesn’t have CSRF protection, that POST request could:
+
+Delete their account,
+
+Transfer money,
+
+Or log them out —
+all without the user realizing it.
+
+How oauth2 works in flow
+
+Client (your app) redirects user to Authorization Server (Google).
+
+User (Resource Owner) logs in and grants permission.
+
+Authorization Server issues a token to the Client.
+
+Client uses token to access Resource Server (user’s data).
+
+Client can now authenticate the user in your app without knowing their password.
+
+clientId: 1085426913365-mc8f0dmp90dos9fc6cvot1pebhgt3jvo.apps.googleusercontent.com
+client secret: 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
+
+"sub" is per user per provider
+
+Different users → Different sub values within the same provider.
+
+Different providers → Even the same person will have different sub values for each provider.
+sub identifies the end user not oauth2 client

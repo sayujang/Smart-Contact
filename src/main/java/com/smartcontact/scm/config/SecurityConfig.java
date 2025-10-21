@@ -18,6 +18,8 @@ import com.smartcontact.scm.services.implementation.SecurityCustomUserDetailServ
 public class SecurityConfig {
     @Autowired
     private SecurityCustomUserDetailService userDetailService;
+    @Autowired
+    private OauthAuthenticationSuccessHandler oauthAuthenticationSuccessHandler;
     @Bean //tells spring to create bean for the object its returning to be created in application context
     public AuthenticationProvider authenticationProvider()
     {
@@ -39,22 +41,28 @@ public class SecurityConfig {
             authorize.anyRequest().permitAll();
         }
         );
-        httpSecurity.formLogin(form -> {form.defaultSuccessUrl("/user/dashboard", true);
+        httpSecurity.formLogin(form -> {form.defaultSuccessUrl("/user/dashboard", true);// Force redirect to dashboard after login
         form.loginPage("/login");
-        form.loginProcessingUrl("/authenticate");  // Force redirect to dashboard after login
+        form.loginProcessingUrl("/authenticate");  //any name( ie no need controllers and endpoint for this, spring security will handle it internally)
         form.permitAll();
-        // form.failureForwardUrl("/login?error=true");
+        form.failureForwardUrl("/login?error=true");//optional: spring security does this by default
         //now spring security will expect email and password as the names of input fields//by default it would expect username and password
     form.usernameParameter("email");
     form.passwordParameter("password");}
         );
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+        httpSecurity.csrf(AbstractHttpConfigurer::disable);//When CSRF is enabled, Spring only allows POST requests with a CSRF token → your GET request gets blocked (403 Forbidden or Whitelabel error). ahref uses by default get method
         httpSecurity.logout(
             logout->{
                 logout.logoutUrl("/do-logout");
                 logout.logoutSuccessUrl("/login?logout=true");
             }
         );
+        httpSecurity.oauth2Login(login->{
+            login.loginPage("/login");
+            login.successHandler(oauthAuthenticationSuccessHandler);
+        });
         return httpSecurity.build();
+        
     }
 }
+
