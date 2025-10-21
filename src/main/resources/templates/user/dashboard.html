@@ -1,12 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" th:replace="~{base :: parent(~{::#content},~{::title},~{::script})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title th:text="${loginUser.name}+' | SCM'"></title>
 </head>
 <body>
-    <h1>This is user dashboard</h1>
-    <a th:href="@{'/do-logout'}">Logout</a>
+    <div id="content">
+    <!-- if user if logged in show sidebar -->
+    <div th:if="${loginUser}">
+    <div th:replace="~{user/sidebar::sidebar}"></div>
+    </div>
+    <div  class="sm:pl-64 pt-20">
+        <div class="flex items-center justify-center md:pt-32 flex-col">
+        <h1 >This is user dashboard page</h1>
+        <h1 th:text="${loginUser.name}"></h1>
+        </div>
+    </div>
+    </div>
+     <script>
+      console.log("profile page");
+    </script>
 </body>
 </html>

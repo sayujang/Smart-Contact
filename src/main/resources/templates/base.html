@@ -9,8 +9,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body class="h-screen w-full bg-gray-100 text-black dark:bg-gray-800 dark:text-white">
+    <!-- if user is logged in show custom navbar -->
+    <div th:if="${loginUser}">
+    <div th:replace="~{user/user_navbar::usernavbar}"></div>
+    </div>
+    
+    <!-- if user is not logged in show normal navbar -->
+    <div th:unless="${loginUser}">
     <div th:replace="~{navbar :: navbar}"></div>
-    <div class="p-4">
+    </div>
+
+    <div class="p-4 pt-20">
         <section data-th-replace="${content}"></section>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>

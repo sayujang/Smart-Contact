@@ -41,10 +41,11 @@ public class SecurityConfig {
             authorize.anyRequest().permitAll();
         }
         );
-        httpSecurity.formLogin(form -> {form.defaultSuccessUrl("/user/dashboard", true);// Force redirect to dashboard after login
+        httpSecurity.formLogin(form -> {
         form.loginPage("/login");
         form.loginProcessingUrl("/authenticate");  //any name( ie no need controllers and endpoint for this, spring security will handle it internally)
         form.permitAll();
+        form.successForwardUrl("/user/profile");
         form.failureForwardUrl("/login?error=true");//optional: spring security does this by default
         //now spring security will expect email and password as the names of input fields//by default it would expect username and password
     form.usernameParameter("email");

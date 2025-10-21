@@ -42,7 +42,7 @@ public class PageController {
     {
         m.addAttribute("name","sayuj");
         m.addAttribute("linki", "https://github.com/");
-        return "home.html";
+        return "home";
     }
     @RequestMapping("/about")
     public String aboutPage()
