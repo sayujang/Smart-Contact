@@ -155,3 +155,5 @@ Different users → Different sub values within the same provider.
 
 Different providers → Even the same person will have different sub values for each provider.
 sub identifies the end user not oauth2 client
+
+spring.security.oauth2.client.registration.google.scope=profile,email  tells google which information our apps want to access from the user
