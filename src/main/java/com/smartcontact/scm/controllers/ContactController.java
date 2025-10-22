@@ -1,5 +1,7 @@
 package com.smartcontact.scm.controllers;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -57,7 +59,8 @@ public class ContactController {
         String username=Helper.getEmailOfLoggedInUser(authentication);
         User user=userService.getUserByEmail(username);
         //get fileurl
-        String fileUrl=imageService.uploadImage(contactForm.getContactPic()); 
+        String filename=UUID.randomUUID().toString();//gennerate random filename for each image
+        String fileUrl=imageService.uploadImage(contactForm.getContactPic(),filename); 
         
 
 
@@ -75,7 +78,7 @@ public class ContactController {
         contact.setFavorite(contactForm.isFavorite());
         contact.setUser(user);
         contact.setPicture(fileUrl);
-
+        contact.setCloudinaryPublicId(filename);//set the contacs pic public id
 
         // System.out.println(contactForm.getContactPic().getOriginalFilename());
 

@@ -39,4 +39,5 @@ public class Contact {
     private User user;
     @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL, fetch =FetchType.EAGER,orphanRemoval = true)
     private List<SocialLink> links=new ArrayList<>();
+    private String CloudinaryPublicId;
 }

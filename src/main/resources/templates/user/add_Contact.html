@@ -289,7 +289,9 @@
                                         alt="Preview" />
                                 </div>
                             </div>
-
+                            <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('contactPic')}"
+                                    th:errors="*{contactPic}">Name is
+                                    required</p>
 
                             <!-- Favorite Checkbox -->
                             <div class="favorite-card rounded-xl p-5 shadow-md">

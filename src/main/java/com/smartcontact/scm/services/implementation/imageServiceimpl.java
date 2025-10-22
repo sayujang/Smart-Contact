@@ -18,13 +18,13 @@ public class imageServiceimpl implements ImageService {
     private Cloudinary cloudinary;
 
     @Override
-    public String uploadImage(MultipartFile contactPic) {
+    public String uploadImage(MultipartFile contactPic,String filename) {
         byte[] data;
-        String filename=UUID.randomUUID().toString();
+        
         try {
             data = new byte[contactPic.getInputStream().available()];
             contactPic.getInputStream().read(data);
-            //upload to cloudinary
+            //upload to cloudinary and set publicid(which is a file identifierin cloudinary) 
             cloudinary.uploader().upload(data,ObjectUtils.asMap(
                 "public_id",filename
             ));
