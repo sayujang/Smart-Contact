@@ -26,7 +26,8 @@ public class RootController {
         }
        String username=Helper.getEmailOfLoggedInUser(authentication);//this is an email
         System.out.println("Logged in user: "+username);
-        User user=userService.getUserByEmail(username);
+        User user=userService.getUserByEmail(username);//if no email returns null thus we can do conditional rendering in base.html in navbar and also in dashboard and profile pages for sidebar
+        
         logger.info(user.getName());
         m.addAttribute("loginUser", user);
     }

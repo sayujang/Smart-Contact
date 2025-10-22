@@ -40,6 +40,7 @@ public class OauthAuthenticationSuccessHandler implements AuthenticationSuccessH
         user.setRoleList(List.of(AppConstants.ROLE_USER));
         user.setEmailVerified(true);
         user.setEnabled(true);
+        System.out.println(oauthuser.getAttributes());
         if(provider.equalsIgnoreCase("google"))
         {
             user.setEmail(oauthuser.getAttribute("email").toString());
@@ -56,8 +57,6 @@ public class OauthAuthenticationSuccessHandler implements AuthenticationSuccessH
             user.setProfilePic(oauthuser.getAttribute("avatar_url").toString());
             user.setProviderUserId(oauthuser.getName());
         }
-        
-
         String email=user.getEmail();
         User user1=userRepo.findByEmail(email).orElse(null);
         if (user1==null) 

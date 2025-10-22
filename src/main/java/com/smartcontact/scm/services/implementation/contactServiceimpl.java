@@ -1,0 +1,52 @@
+package com.smartcontact.scm.services.implementation;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.smartcontact.scm.Helpers.ResourceNotFoundException;
+import com.smartcontact.scm.entities.Contact;
+import com.smartcontact.scm.repositories.ContactRepo;
+import com.smartcontact.scm.services.ContactService;
+@Service
+public class contactServiceimpl implements ContactService {
+
+    @Autowired
+    ContactRepo contactRepo;
+    @Override
+    public Contact save(Contact contact) {
+        String contactId=UUID.randomUUID().toString();
+        contact.setId(contactId);
+        return contactRepo.save(contact);
+    }
+
+    @Override
+    public Contact update(Contact contact) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'update'");
+    }
+
+    @Override
+    public List<Contact> getAll() {
+        return contactRepo.findAll();
+    }
+
+    @Override
+    public Contact getById(String id) {
+       return contactRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("Contact not found with given id: "+id));
+    }
+
+    @Override
+    public void delete(String id) {
+        Contact contact=contactRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("Contact not found with given id: "+id));
+        contactRepo.delete(contact);
+    }
+
+    @Override
+    public List<Contact> getByUserId(String userId) {
+       return contactRepo.findByUserId(userId);
+    }
+    
+}

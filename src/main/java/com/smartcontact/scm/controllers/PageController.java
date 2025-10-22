@@ -90,6 +90,8 @@ public class PageController {
         //validate form data
         if (result.hasErrors())
         {
+            Message message=Message.builder().content("Please correct the shown errors!").type(MessageType.red).build();
+            session.setAttribute("message", message);  
             return "register";
         }
         //save to database

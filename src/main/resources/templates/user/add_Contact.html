@@ -139,7 +139,9 @@
                     <!-- Main Card -->
                     <div
                         class="card-enhanced bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 animate-fade-in">
-                        <form action="" class="space-y-6">
+                        <div th:replace="message::messagebox"></div>
+                        <form th:action="@{/user/contact/add}" th:object="${contactForm}" method="post"
+                            enctype="multipart/form-data" class="space-y-6 novalidate">
 
                             <!-- Name Field -->
                             <div class="input-group">
@@ -152,10 +154,14 @@
                                         class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
                                         <i class="fa-regular fa-user text-lg"></i>
                                     </div>
-                                    <input type="text"
+                                    <input type="text" th:field="*{name}"
                                         class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
                                         placeholder="Enter full name">
+
                                 </div>
+                                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('name')}"
+                                    th:errors="*{name}">Name is
+                                    required</p>
                             </div>
 
                             <!-- Email Field -->
@@ -169,10 +175,14 @@
                                         class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
                                         <i class="fa-regular fa-envelope text-lg"></i>
                                     </div>
-                                    <input type="email"
+                                    <input type="email" th:field="*{email}"
                                         class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-pink-100 dark:focus:ring-pink-900 focus:border-pink-500 dark:focus:border-pink-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
                                         placeholder="xyz@gmail.com">
+
                                 </div>
+                                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('email')}"
+                                    th:errors="*{email}">Name is
+                                    required</p>
                             </div>
 
                             <!-- Contact Number Field -->
@@ -186,10 +196,14 @@
                                         class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
                                         <i class="fa-solid fa-phone text-lg"></i>
                                     </div>
-                                    <input type="tel"
+                                    <input type="tel" th:field="*{phoneNumber}"
                                         class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-green-100 dark:focus:ring-green-900 focus:border-green-500 dark:focus:border-green-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
                                         placeholder="xxxxx-xxxxx">
+
                                 </div>
+                                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('phoneNumber')}"
+                                    th:errors="*{phoneNumber}">Name is
+                                    required</p>
                             </div>
 
                             <!-- Address Field -->
@@ -198,9 +212,12 @@
                                     <i class="fa-solid fa-location-dot mr-2 text-red-500"></i>
                                     Contact Address
                                 </label>
-                                <textarea rows="4"
+                                <textarea rows="4" th:field="*{address}"
                                     class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900 focus:border-red-500 dark:focus:border-red-400 block w-full p-4 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none"
                                     placeholder="Enter your address here"></textarea>
+                                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('address')}"
+                                    th:errors="*{address}">Name is
+                                    required</p>
                             </div>
 
                             <!-- Description Field -->
@@ -209,7 +226,7 @@
                                     <i class="fa-solid fa-align-left mr-2 text-purple-500"></i>
                                     Description
                                 </label>
-                                <textarea rows="4"
+                                <textarea rows="4" th:field="*{description}"
                                     class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900 focus:border-purple-500 dark:focus:border-purple-400 block w-full p-4 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none"
                                     placeholder="Write description about the contact..."></textarea>
                             </div>
@@ -226,8 +243,8 @@
                                             class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
                                             <i class="fa-solid fa-earth-americas text-lg"></i>
                                         </div>
-                                        <input type="url"
-                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 focus:border-indigo-500 dark:focus:border-indigo-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                        <input type="url" th:field="*{websiteLink}"
+                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 focus:border-indigo-500 dark:focus:border-indigo-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none novalidate"
                                             placeholder="facebook.com" />
                                     </div>
                                 </div>
@@ -241,8 +258,8 @@
                                             class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
                                             <i class="fa-brands fa-linkedin text-lg"></i>
                                         </div>
-                                        <input type="url"
-                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-600 dark:focus:border-blue-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                        <input type="url" th:field="*{linkedInLink}"
+                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-600 dark:focus:border-blue-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none novalidate"
                                             placeholder="LinkedIn profile link" />
                                     </div>
                                 </div>
@@ -256,8 +273,8 @@
                                 </label>
 
                                 <!-- Hidden input -->
-                                <input id="image_file_input" type="file" accept="image/*" onchange="previewImage(event)"
-                                    class="hidden" />
+                                <input th:field="*{contactPic}" id="image_file_input" type="file" accept="image/*"
+                                    onchange="previewImage(event)" class="hidden" />
 
                                 <!-- Custom button -->
                                 <label for="image_file_input" class="mt-4 ml-3 inline-block px-5 py-2.5 rounded-lg text-sm font-semibold 
@@ -277,7 +294,7 @@
                             <!-- Favorite Checkbox -->
                             <div class="favorite-card rounded-xl p-5 shadow-md">
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="favorite-checkbox"
+                                    <input type="checkbox" id="favorite-checkbox" th:field="*{favorite}"
                                         class="w-5 h-5 text-yellow-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:ring-2 cursor-pointer" />
                                     <label for="favorite-checkbox" class="ml-3 flex items-center cursor-pointer">
                                         <i class="fa-solid fa-star text-yellow-500 text-xl mr-2"></i>
