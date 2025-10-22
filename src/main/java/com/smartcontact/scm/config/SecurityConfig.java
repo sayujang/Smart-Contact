@@ -45,7 +45,7 @@ public class SecurityConfig {
         form.loginPage("/login");
         form.loginProcessingUrl("/authenticate");  //any name( ie no need controllers and endpoint for this, spring security will handle it internally)
         form.permitAll();
-        form.successForwardUrl("/user/profile");
+        form.successForwardUrl("/user/dashboard");
         form.failureForwardUrl("/login?error=true");//optional: spring security does this by default
         //now spring security will expect email and password as the names of input fields//by default it would expect username and password
     form.usernameParameter("email");

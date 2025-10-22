@@ -23,7 +23,7 @@ public class UserController {
     @Autowired
     UserService userService;
     
-   @GetMapping("/dashboard")
+   @RequestMapping("/dashboard")
    public String userDashboard() {
        return "user/dashboard";
    }

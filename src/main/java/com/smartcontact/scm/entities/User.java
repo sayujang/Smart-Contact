@@ -46,7 +46,9 @@ public class User implements UserDetails{
     @Column(length=10000)
     private String about;
     @Column(length = 10000)
-    private String profilePic="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&s=200";
+    @Builder.Default
+    private String profilePic="/images/user.png";
+    private String phoneNumber;
     @Getter(value=AccessLevel.NONE)
     private boolean enabled=true;
     private boolean emailVerified=false;

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{base :: parent(~{::#content},~{::title},~{::script})}">
+
+<head>
+    <title>Add Contact</title>
+    <style>
+        .input-group {
+            transition: all 0.3s ease;
+        }
+
+        .input-enhanced {
+            transition: all 0.3s ease;
+        }
+
+        .input-enhanced:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.3);
+        }
+
+        .dark .input-enhanced:focus {
+            box-shadow: 0 8px 20px -5px rgba(96, 165, 250, 0.4);
+        }
+
+        .input-group:focus-within .icon-float {
+            transform: scale(1.15);
+            color: #3b82f6;
+        }
+
+        .dark .input-group:focus-within .icon-float {
+            color: #60a5fa;
+        }
+
+        .icon-float {
+            transition: all 0.3s ease;
+        }
+
+        .btn-animated {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-animated:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-animated::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-animated:hover::before {
+            left: 100%;
+        }
+
+        .card-enhanced {
+            transition: all 0.3s ease;
+        }
+
+        .label-modern {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .gradient-border {
+            position: relative;
+            background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box;
+            border: 3px solid transparent;
+        }
+
+        .dark .gradient-border {
+            background: linear-gradient(#1f2937, #1f2937) padding-box,
+                linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box;
+        }
+
+        .favorite-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            transition: all 0.3s ease;
+        }
+
+        .dark .favorite-card {
+            background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+        }
+
+        .favorite-card:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <div th:replace="~{user/sidebar::sidebar}"></div>
+        <div class="sm:pl-64 pt-20" style="min-height: 1000px">
+            <div class="grid grid-cols-12 gap-6 p-6">
+                <div
+                    class="col-span-12 md:col-span-10 lg:col-span-8 xl:col-span-6 md:col-start-2 lg:col-start-3 xl:col-start-4">
+                    <!-- Header Section -->
+                    <div class="mb-8 animate-fade-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-1 h-12 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Add New Contact</h1>
+                                <p class="text-gray-500 dark:text-gray-400 mt-1">
+                                    <i class="fa-solid fa-cloud mr-2"></i>Securely stored on cloud • Direct email
+                                    integration
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Card -->
+                    <div
+                        class="card-enhanced bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 animate-fade-in">
+                        <form action="" class="space-y-6">
+
+                            <!-- Name Field -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-user mr-2 text-blue-500"></i>
+                                    Contact Name
+                                </label>
+                                <div class="relative">
+                                    <div
+                                        class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
+                                        <i class="fa-regular fa-user text-lg"></i>
+                                    </div>
+                                    <input type="text"
+                                        class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                        placeholder="Enter full name">
+                                </div>
+                            </div>
+
+                            <!-- Email Field -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-envelope mr-2 text-pink-500"></i>
+                                    Contact Email
+                                </label>
+                                <div class="relative">
+                                    <div
+                                        class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
+                                        <i class="fa-regular fa-envelope text-lg"></i>
+                                    </div>
+                                    <input type="email"
+                                        class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-pink-100 dark:focus:ring-pink-900 focus:border-pink-500 dark:focus:border-pink-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                        placeholder="xyz@gmail.com">
+                                </div>
+                            </div>
+
+                            <!-- Contact Number Field -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-phone mr-2 text-green-500"></i>
+                                    Contact Number
+                                </label>
+                                <div class="relative">
+                                    <div
+                                        class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
+                                        <i class="fa-solid fa-phone text-lg"></i>
+                                    </div>
+                                    <input type="tel"
+                                        class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-green-100 dark:focus:ring-green-900 focus:border-green-500 dark:focus:border-green-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                        placeholder="xxxxx-xxxxx">
+                                </div>
+                            </div>
+
+                            <!-- Address Field -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-location-dot mr-2 text-red-500"></i>
+                                    Contact Address
+                                </label>
+                                <textarea rows="4"
+                                    class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900 focus:border-red-500 dark:focus:border-red-400 block w-full p-4 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none"
+                                    placeholder="Enter your address here"></textarea>
+                            </div>
+
+                            <!-- Description Field -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-align-left mr-2 text-purple-500"></i>
+                                    Description
+                                </label>
+                                <textarea rows="4"
+                                    class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900 focus:border-purple-500 dark:focus:border-purple-400 block w-full p-4 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none"
+                                    placeholder="Write description about the contact..."></textarea>
+                            </div>
+
+                            <!-- Social Links -->
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="input-group">
+                                    <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                        <i class="fa-solid fa-globe mr-2 text-indigo-500"></i>
+                                        Website Link
+                                    </label>
+                                    <div class="relative">
+                                        <div
+                                            class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
+                                            <i class="fa-solid fa-earth-americas text-lg"></i>
+                                        </div>
+                                        <input type="url"
+                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 focus:border-indigo-500 dark:focus:border-indigo-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                            placeholder="facebook.com" />
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                        <i class="fa-brands fa-linkedin mr-2 text-blue-600"></i>
+                                        LinkedIn Profile
+                                    </label>
+                                    <div class="relative">
+                                        <div
+                                            class="icon-float absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 dark:text-gray-500">
+                                            <i class="fa-brands fa-linkedin text-lg"></i>
+                                        </div>
+                                        <input type="url"
+                                            class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-600 dark:focus:border-blue-400 block w-full pl-12 pr-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                            placeholder="LinkedIn profile link" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image Upload Section -->
+                            <div class="input-group">
+                                <label class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                                    <i class="fa-solid fa-image mr-2 text-yellow-500"></i>
+                                    Contact Image
+                                </label>
+
+                                <!-- Hidden input -->
+                                <input id="image_file_input" type="file" accept="image/*" onchange="previewImage(event)"
+                                    class="hidden" />
+
+                                <!-- Custom button -->
+                                <label for="image_file_input" class="mt-4 ml-3 inline-block px-5 py-2.5 rounded-lg text-sm font-semibold 
+                text-white bg-blue-600 hover:bg-blue-700 cursor-pointer 
+                dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
+                                    Choose Image
+                                </label>
+
+                                <!-- Image preview -->
+                                <div id="image_preview_container" class="hidden mt-4">
+                                    <img id="upload_image_preview" class="max-h-52 mx-auto rounded-xl shadow-lg" src=""
+                                        alt="Preview" />
+                                </div>
+                            </div>
+
+
+                            <!-- Favorite Checkbox -->
+                            <div class="favorite-card rounded-xl p-5 shadow-md">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="favorite-checkbox"
+                                        class="w-5 h-5 text-yellow-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-yellow-500 dark:focus:ring-yellow-400 focus:ring-2 cursor-pointer" />
+                                    <label for="favorite-checkbox" class="ml-3 flex items-center cursor-pointer">
+                                        <i class="fa-solid fa-star text-yellow-500 text-xl mr-2"></i>
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-yellow-100">
+                                            Mark as Favorite Contact
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                                <button type="submit"
+                                    class="btn-animated flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:hover:bg-gray-900 text-black hover:bg-gray-100 dark:text-white font-bold rounded-xl shadow-lg">
+                                    <i class="fa-solid fa-user-plus mr-2"></i>Add Contact
+                                </button>
+                                <button type="reset" onclick="resetForm()"
+                                    class="btn-animated flex-1 px-8 py-4 bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-700 dark:hover:to-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900 dark:text-white font-bold rounded-xl shadow-lg">
+                                    <i class="fa-solid fa-rotate-right mr-2"></i>Reset Form
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log("profile page");
+
+        // Image preview function
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('upload_image_preview');
+            const container = document.getElementById('image_preview_container');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    container.classList.remove('hidden');
+                    container.classList.add('animate-fade-in');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                container.classList.add('hidden');
+                preview.src = '';
+            }
+        }
+
+        // Reset form function
+        function resetForm() {
+            const preview = document.getElementById('upload_image_preview');
+            const container = document.getElementById('image_preview_container');
+            const fileInput = document.getElementById('image_file_input');
+
+            container.classList.add('hidden');
+            preview.src = '';
+            fileInput.value = null; // ensure it resets
+        }
+
+    </script>
+</body>
+
+</html>

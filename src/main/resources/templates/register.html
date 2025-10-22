@@ -1,78 +1,209 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{base :: parent(~{::#content},~{::title},~{::script})}">
+
 <head>
-    <title>Register</title>
+  <title>Register</title>
+  <style>
+    .input-group {
+      transition: all 0.3s ease;
+    }
+    
+    .input-enhanced {
+      transition: all 0.3s ease;
+    }
+    
+    .input-enhanced:focus {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.3);
+    }
+    
+    .dark .input-enhanced:focus {
+      box-shadow: 0 8px 20px -5px rgba(96, 165, 250, 0.4);
+    }
+    
+    .btn-animated {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-animated:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-animated::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s;
+    }
+    
+    .btn-animated:hover::before {
+      left: 100%;
+    }
+    
+    .card-enhanced {
+      transition: all 0.3s ease;
+    }
+    
+    .label-modern {
+      font-weight: 600;
+      font-size: 0.875rem;
+      letter-spacing: 0.025em;
+      margin-bottom: 0.5rem;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .gradient-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      border-radius: 9999px;
+    }
+  </style>
 </head>
+
 <body>
-    <div id="content">
-        <div class="grid grid-cols-12">
-          <div class="col-span-4 md:col-span-2 lg:col-span-3 xl:col-span-4"></div>
-          <div class="col-span-12 md:col-span-8 lg:col-span-6 xl:col-span-4">
-            <!-- card code -->
-            <div href="#" class="block p-6 bg-white border-t-[10px] border border-blue-700 rounded-xl shadow-sm hover:bg-gray-100 dark:bg-gray-800 dark:border-blue-700 dark:hover:bg-gray-700">
-            <div th:replace="message::messagebox"></div> 
-            <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Sign up here</h5>
-            <p class="font-normal text-gray-700 dark:text-gray-400">Start managing contact on cloud</p>
-            <form th:action="@{'/do-register'}" method="post" class="mt-5" th:object="${userInfo}" novalidate>
-              <!-- name -->
-              <div class="mb-5">
-                <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
-                <!-- here th:field automatically creates name="name" -->
-                <input type="text" id="name" th:field="*{name}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your name" required />
-                <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name is required</p>
-              </div> 
-              <!-- email -->
-               <div class="mb-5">
-    <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-    <input type="email" th:field="*{email}" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
-    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email is required</p>
-  </div>
-              <!-- password -->
-               <div class="mb-5">
-    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">New password</label>
-    <input type="password" id="password" th:field="*{password}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
-    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password is required</p>
-  </div>
-              <!-- phone number -->
-               <div class="mb-5">
-    <label for="contact" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact number</label>
-    <input type="text" id="contact" th:field="*{phoneNumber}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
-    <p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}">Phone number is required</p>
-  </div>
-              <!-- about me -->
-              <div class="mb-5">
-<label for="message" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Describe yourself</label>
-<textarea id="message" th:field="*{about}" rows="6" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Start here..."></textarea>
-<p class="text-red-600 px-1 py-2" th:if="${#fields.hasErrors('about')}" th:errors="*{about}">About is required</p>
+  <div id="content">
+    <div class="grid grid-cols-12 min-h-screen py-12 px-4">
+      <div class="col-span-4 md:col-span-2 lg:col-span-3 xl:col-span-4"></div>
+      <div class="col-span-12 md:col-span-8 lg:col-span-6 xl:col-span-4">
+        <!-- card code -->
+        <div class="card-enhanced bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
+          <!-- Gradient Top Bar -->
+          <div class="gradient-bar"></div>
+          
+          <div class="p-8 md:p-10">
+            <div th:replace="message::messagebox"></div>
+            
+            <!-- Header Section -->
+            <div class="mb-8">
+              <h5 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign up here</h5>
+              <p class="text-gray-600 dark:text-gray-400 flex items-center">
+                <i class="fa-solid fa-cloud mr-2 text-blue-500"></i>
+                Start managing contacts on cloud
+              </p>
+            </div>
+
+            <form th:action="@{'/do-register'}" method="post" class="space-y-5" th:object="${userInfo}" novalidate>
+              
+              <!-- Name Field -->
+              <div class="input-group">
+                <label for="name" class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fa-solid fa-user mr-2 text-blue-500"></i>
+                  Name
+                </label>
+                <input type="text" id="name" th:field="*{name}"
+                  class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900 focus:border-blue-500 dark:focus:border-blue-400 block w-full px-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  placeholder="Enter your name" required />
+                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name is
+                  required</p>
               </div>
-              <!-- button -->
-               <div class="mb-3 flex justify-center space-x-3">
-                <button
-                  type="submit"
-                  class="px-3 py-2 rounded bg-gray-800 hover:bg-gray text-white dark:bg-blue-800 dark:hover:bg-blue-800"
-                >
-                  Signup
+
+              <!-- Email Field -->
+              <div class="input-group">
+                <label for="email" class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fa-solid fa-envelope mr-2 text-pink-500"></i>
+                  Email
+                </label>
+                <input type="email" th:field="*{email}" id="email"
+                  class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-pink-100 dark:focus:ring-pink-900 focus:border-pink-500 dark:focus:border-pink-400 block w-full px-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  placeholder="name@example.com" required />
+                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email is
+                  required</p>
+              </div>
+
+              <!-- Password Field -->
+              <div class="input-group">
+                <label for="password" class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fa-solid fa-lock mr-2 text-purple-500"></i>
+                  New Password
+                </label>
+                <input type="password" id="password" th:field="*{password}"
+                  class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900 focus:border-purple-500 dark:focus:border-purple-400 block w-full px-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  placeholder="Enter secure password"
+                  required />
+                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">
+                  Password is required</p>
+              </div>
+
+              <!-- Phone Number Field -->
+              <div class="input-group">
+                <label for="contact" class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fa-solid fa-phone mr-2 text-green-500"></i>
+                  Contact Number
+                </label>
+                <input type="text" id="contact" th:field="*{phoneNumber}"
+                  class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-green-100 dark:focus:ring-green-900 focus:border-green-500 dark:focus:border-green-400 block w-full px-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  placeholder="Enter contact number"
+                  required />
+                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}">
+                  Phone number is required</p>
+              </div>
+
+              <!-- About Me Field -->
+              <div class="input-group">
+                <label for="message" class="label-modern text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fa-solid fa-align-left mr-2 text-indigo-500"></i>
+                  Describe Yourself
+                </label>
+                <textarea id="message" th:field="*{about}" rows="6"
+                  class="input-enhanced bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 focus:border-indigo-500 dark:focus:border-indigo-400 block w-full px-4 py-3.5 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none"
+                  placeholder="Tell us about yourself..."></textarea>
+                <p class="text-red-600 text-sm mt-2 px-1" th:if="${#fields.hasErrors('about')}" th:errors="*{about}">About is
+                  required</p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button type="submit"
+                  class="dark:hover:bg-gray-900 hover:bg-gray-100 text-black btn-animated flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white dark:text-white font-bold rounded-xl shadow-lg">
+                  <i class="fa-solid fa-user-plus mr-2"></i>Sign Up
                 </button>
-                <button
-                  type="reset"
-                  class="px-3 py-2 rounded bg-orange-800 hover:bg-orange text-white dark:bg-orange-800 dark:hover:bg-orange-800"
-                >
-                  Reset
+                <button type="reset"
+                  class="dark:hover:bg-gray-900 hover:bg-gray-100 text-black btn-animated flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 dark:from-orange-600 dark:to-orange-700 dark:hover:from-orange-700 dark:hover:to-orange-800 text-white dark:text-white font-bold rounded-xl shadow-lg">
+                  <i class="fa-solid fa-rotate-right mr-2"></i>Reset
                 </button>
               </div>
             </form>
-            
+
+            <!-- Footer Text -->
+            <div class="mt-8 text-center">
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Already have an account? 
+                <a th:href="@{/login}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold">Login here</a>
+              </p>
+            </div>
           </div>
         </div>
-
-
-
+      </div>
     </div>
+
     <script>
       console.log("Register page");
     </script>
     <script>
       console.log("second Register log")
     </script>
+  </div>
 </body>
+
 </html>
