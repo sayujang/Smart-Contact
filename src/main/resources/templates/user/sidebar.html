@@ -10,7 +10,7 @@
             <img 
                th:src="${loginUser.profilePic}" 
                class="w-20 h-20 rounded-full object-cover mb-3 border-4 border-gray-200 dark:border-gray-600" 
-               alt="Profile Picture"
+               alt="Profile Picture" onerror="this.src='/images/user.png'"
             />
             <!-- User Name -->
             <h3 
@@ -53,7 +53,7 @@
             </a>
          </li>
          <li>
-            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            <a th:href="@{/user/contact}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                <i class="fa-solid fa-address-book h-5 w-5"></i>
                <span class="flex-1 ms-3 whitespace-nowrap">Contacts</span>
             </a>

@@ -1,8 +1,12 @@
 package com.smartcontact.scm.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,7 +14,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import com.smartcontact.scm.Helpers.AppConstants;
 import com.smartcontact.scm.Helpers.Helper;
 import com.smartcontact.scm.Helpers.Message;
 import com.smartcontact.scm.Helpers.MessageType;
@@ -33,6 +39,9 @@ public class ContactController {
     private UserService userService;
     @Autowired
     private ImageService imageService;
+    Logger logger=LoggerFactory.getLogger(this.getClass());
+
+
     @RequestMapping("/add")
     public String addContactView(Model model)
     {
@@ -59,8 +68,6 @@ public class ContactController {
         String username=Helper.getEmailOfLoggedInUser(authentication);
         User user=userService.getUserByEmail(username);
         //get fileurl
-        String filename=UUID.randomUUID().toString();//gennerate random filename for each image
-        String fileUrl=imageService.uploadImage(contactForm.getContactPic(),filename); 
         
 
 
@@ -77,8 +84,14 @@ public class ContactController {
         contact.setLinkedInLink(contactForm.getLinkedInLink());
         contact.setFavorite(contactForm.isFavorite());
         contact.setUser(user);
+        
+        if (contactForm.getContactPic()!=null && !contactForm.getContactPic().isEmpty())
+        {
+        String filename=UUID.randomUUID().toString();//gennerate random filename for each image
+        String fileUrl=imageService.uploadImage(contactForm.getContactPic(),filename); 
         contact.setPicture(fileUrl);
         contact.setCloudinaryPublicId(filename);//set the contacs pic public id
+        }
 
         // System.out.println(contactForm.getContactPic().getOriginalFilename());
 
@@ -89,5 +102,31 @@ public class ContactController {
         Message message=Message.builder().content("Contact Added Succesfully!").type(MessageType.green).build();
         session.setAttribute("message", message);
         return "redirect:/user/contact/add";
+    }
+    //uses the endpoint defined in class level request mapping
+    @RequestMapping//get request by default
+    public String viewContacts(@RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = AppConstants.PAGE_SIZE + "") int size,
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction,Model model, Authentication authentication)
+    {   
+        String username=Helper.getEmailOfLoggedInUser(authentication);
+        User user=userService.getUserByEmail(username);
+        Page<Contact> pageContact=contactService.getByUser(user,page,size,sortBy,direction);
+        model.addAttribute("pageContact", pageContact);
+        model.addAttribute("pageSize", AppConstants.PAGE_SIZE);
+        return "user/view_contacts";
+    }
+    //search handler
+    @RequestMapping("/search")
+    public String searchHandler(
+        @RequestParam("searchType") String searchType,
+        @RequestParam("query") String query,
+        Model model
+    )
+    {
+        logger.info("Search Type: " + searchType);
+        logger.info("Query: " + query);
+        return "user/search";
     }
 }

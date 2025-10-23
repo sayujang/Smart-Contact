@@ -9,11 +9,11 @@ public class FileValidator implements ConstraintValidator<ValidFile,MultipartFil
 
     @Override
     public boolean isValid(MultipartFile value, ConstraintValidatorContext context) {
-        final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 5 MB
+        final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
         if(value==null || value.isEmpty()){
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("File cannot be empty").addConstraintViolation();
-            return false;
+            // context.disableDefaultConstraintViolation();
+            // context.buildConstraintViolationWithTemplate("File cannot be empty").addConstraintViolation();
+            return true;
         }
         if(value.getSize()>MAX_FILE_SIZE){
             context.disableDefaultConstraintViolation();
