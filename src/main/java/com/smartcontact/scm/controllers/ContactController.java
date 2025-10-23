@@ -23,6 +23,7 @@ import com.smartcontact.scm.Helpers.MessageType;
 import com.smartcontact.scm.entities.Contact;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.forms.ContactForm;
+import com.smartcontact.scm.forms.ContactSearchForm;
 import com.smartcontact.scm.services.ContactService;
 import com.smartcontact.scm.services.ImageService;
 import com.smartcontact.scm.services.UserService;
@@ -98,8 +99,9 @@ public class ContactController {
     }
 
     // uses the endpoint defined in class level request mapping
-    @RequestMapping // get request by default
-    public String viewContacts(@RequestParam(value = "page", defaultValue = "0") int page,
+    @RequestMapping // get request by default//get methods are essential for pagination  not requestparam or model attribute
+    public String viewContacts(
+        @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = AppConstants.PAGE_SIZE + "") int size,
             @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
             @RequestParam(value = "direction", defaultValue = "asc") String direction, Model model,
@@ -108,13 +110,14 @@ public class ContactController {
         User user = userService.getUserByEmail(username);
         Page<Contact> pageContact = contactService.getByUser(user, page, size, sortBy, direction);
         model.addAttribute("pageContact", pageContact);
+        model.addAttribute("contactSearchForm", new ContactSearchForm());
         model.addAttribute("pageSize", AppConstants.PAGE_SIZE);
         return "user/view_contacts";
     }
 
     // search handler
     @RequestMapping("/search")
-    public String searchHandler(
+    public String searchHandler(@ModelAttribute("contactSearchForm") ContactSearchForm contactSearchForm,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = AppConstants.PAGE_SIZE + "") int size,
             @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
@@ -125,17 +128,17 @@ public class ContactController {
         String username = Helper.getEmailOfLoggedInUser(authentication);
         User user = userService.getUserByEmail(username);
         Page<Contact> pageContact = null;
-        if (searchType.equalsIgnoreCase("name")) {
-            pageContact = contactService.searchByName(query, page, size, sortBy, sortBy, user);
-        } else if (searchType.equalsIgnoreCase("email")) {
-            pageContact = contactService.searchByEmail(query, page, size, sortBy, sortBy, user);
-        } else if (searchType.equalsIgnoreCase("phone")) {
-            pageContact = contactService.searchByPhoneNumber(query, page, size, sortBy, sortBy, user);
+        if (contactSearchForm.getSearchType().equalsIgnoreCase("name")) {
+            pageContact = contactService.searchByName(contactSearchForm.getQuery(), page, size, sortBy, sortBy, user);
+        } else if (contactSearchForm.getSearchType().equalsIgnoreCase("email")) {
+            pageContact = contactService.searchByEmail(contactSearchForm.getQuery(), page, size, sortBy, sortBy, user);
+        } else if (contactSearchForm.getSearchType().equalsIgnoreCase("phone")) {
+            pageContact = contactService.searchByPhoneNumber(contactSearchForm.getQuery(), page, size, sortBy, sortBy, user);
         }
         logger.info("pagecontact {}", pageContact.getContent());
         model.addAttribute("pageContact", pageContact);
         model.addAttribute("pageSize", AppConstants.PAGE_SIZE);
-
+        model.addAttribute("contactSearchForm", contactSearchForm);
         logger.info("Search Type: " + searchType);
         logger.info("Query: " + query);
         return "user/search";

@@ -230,13 +230,29 @@
                                         <p class="text-sm text-gray-600 dark:text-gray-400">All your saved contacts</p>
                                     </div>
                                 </div>
+                                <!-- show the no of users -->
+
+                                <div
+                                    class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
+                                    <i class="fa-solid fa-users text-purple-600 dark:text-purple-400"></i>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                        <span
+                                            th:if="${contactSearchForm.query != null and !contactSearchForm.query.isEmpty()}">
+                                            Found <span class="font-bold"
+                                                th:text="${pageContact.totalElements}">0</span> contact(s) matching
+                                            <span class="font-semibold"
+                                                th:text="${contactSearchForm.query}">search</span>
+                                        </span>
+                                    </p>
+                                </div>
 
                                 <!-- Enhanced Search Section -->
                                 <div class="search-container">
-                                    <form th:action="@{'/user/contact/search'}" method="get" class="flex items-center gap-2">
+                                    <form th:action="@{'/user/contact/search'}" th:object="${contactSearchForm}"
+                                        method="get" class="flex items-center gap-2">
                                         <!-- Search Type Selector -->
                                         <div class="relative">
-                                            <select name="searchType" id="search-type" class="block p-3 pr-10 text-sm text-gray-900 border-2 border-gray-300 rounded-l-xl bg-white 
+                                            <select th:field="*{searchType}" name="searchType" id="search-type" class="block p-3 pr-10 text-sm text-gray-900 border-2 border-gray-300 rounded-l-xl bg-white 
                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 
                         dark:bg-gray-800 dark:border-gray-600 dark:text-white 
                         dark:focus:ring-purple-500 dark:focus:border-purple-500 
@@ -255,7 +271,7 @@
 
                                         <div class="relative flex-1 max-w-sm">
                                             <!-- Input Field -->
-                                            <input type="text" name="query" id="search-input" class="block w-full p-3 pr-28 text-sm text-gray-900 border border-gray-300 rounded-xl
+                                            <input type="text" th:field="*{query}" name="query" id="search-input" class="block w-full p-3 pr-28 text-sm text-gray-900 border border-gray-300 rounded-xl
     bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 
     dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
     dark:focus:ring-purple-500 dark:focus:border-purple-500 shadow-sm transition-all duration-200"
@@ -280,12 +296,14 @@
 
 
                                         <!-- Clear/Reset Button (optional) -->
-                                        <a href="/user/contact" class="p-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 
+                                        <a href="/user/contact"
+                                            class="p-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 
                     bg-gray-100 dark:bg-gray-700 rounded-xl 
                     hover:bg-gray-200 dark:hover:bg-gray-600 
                     focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600
                     shadow-sm hover:shadow-md transform hover:-translate-y-0.5
-                    transition-all duration-200 flex items-center justify-center dark:border-gray-600 border-gray-300 border" title="Clear search">
+                    transition-all duration-200 flex items-center justify-center dark:border-gray-600 border-gray-300 border"
+                                            title="Clear search">
                                             <i class="fa-solid fa-rotate-right"></i>
                                         </a>
                                     </form>
@@ -336,9 +354,9 @@
                                                         class="profile-img w-12 h-12 rounded-full object-cover border-2 border-purple-400 shadow-md"
                                                         onerror="this.src='/images/user.png'">
                                                     <div th:if="*{favorite}"
-     class="absolute -top-1 -right-1 text-yellow-400 text-sm drop-shadow-sm">
-  <i class="fa-solid fa-star"></i>
-</div>
+                                                        class="absolute -top-1 -right-1 text-yellow-400 text-sm drop-shadow-sm">
+                                                        <i class="fa-solid fa-star"></i>
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <div th:text="*{name}"
@@ -407,7 +425,7 @@
 
                                     <!-- Previous Button -->
                                     <li data-th-unless="${pageContact.first}">
-                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page=' + ${pageContact.number-1}}"
+                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${pageContact.number-1}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
                                             href="#" class="flex items-center justify-center px-5 h-11 leading-tight 
                            text-gray-700 dark:text-gray-200 
                            bg-white dark:bg-gray-800 
@@ -422,7 +440,7 @@
 
                                     <!-- Page Numbers -->
                                     <li data-th-each="index : ${#numbers.sequence(0,pageContact.totalPages-1)}">
-                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page='+${index}}"
+                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${index}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
                                             href="#"
                                             data-th-classappend="${index==pageContact.number? 
                         'bg-purple-100 text-purple-700 border-gray-300 dark:bg-purple-600 dark:text-white dark:border-purple-500 rounded-md ring-1 ring-purple-300 dark:ring-0 shadow-sm' : 
@@ -434,7 +452,7 @@
 
                                     <!-- Next Button -->
                                     <li data-th-unless="${pageContact.last}">
-                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page=' + ${pageContact.number+1}}"
+                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${pageContact.number+1}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
                                             href="#" class="flex items-center justify-center px-5 h-11 leading-tight 
                            text-gray-700 dark:text-gray-200 
                            bg-white dark:bg-gray-800 
@@ -476,25 +494,25 @@
         </div>
     </div>
     <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const searchType = document.getElementById('search-type');
-  const searchInput = document.getElementById('search-input');
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchType = document.getElementById('search-type');
+            const searchInput = document.getElementById('search-input');
 
-  const placeholders = {
-    name: 'Search by name...',
-    email: 'Search by email...',
-    phone: 'Search by phone number...'
-  };
+            const placeholders = {
+                name: 'Search by name...',
+                email: 'Search by email...',
+                phone: 'Search by phone number...'
+            };
 
-  // initialize placeholder to current select value
-  searchInput.placeholder = placeholders[searchType.value] || 'Search contacts...';
+            // initialize placeholder to current select value
+            searchInput.placeholder = placeholders[searchType.value] || 'Search contacts...';
 
-  // normal change handler
-  searchType.addEventListener('change', function () {
-    searchInput.placeholder = placeholders[this.value] || 'Search contacts...';
-  });
-});
-</script>
+            // normal change handler
+            searchType.addEventListener('change', function () {
+                searchInput.placeholder = placeholders[this.value] || 'Search contacts...';
+            });
+        });
+    </script>
 
 </body>
 
