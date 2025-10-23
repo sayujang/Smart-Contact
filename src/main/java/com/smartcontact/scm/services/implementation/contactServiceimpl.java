@@ -49,15 +49,35 @@ public class contactServiceimpl implements ContactService {
     }
 
     @Override
-    public List<Contact> getByUserId(String userId) {
-       return contactRepo.findByUserId(userId);
-    }
-
-    @Override
     public Page<Contact> getByUser(User user, int page, int size, String sortBy, String sortDir) {
     Sort sort=sortDir.equals("desc")?Sort.by(sortBy).descending():Sort.by(sortBy).ascending();
      var pageable=PageRequest.of(page,size,sort);
      return contactRepo.findByUser(user,pageable);   
     }
-    
+
+    @Override
+    public Page<Contact> searchByName(String name, int page, int size, String sortBy, String sortDir,User user) {
+        Sort sort=sortDir.equals("desc")?Sort.by(sortBy).descending():Sort.by(sortBy).ascending();
+        var pageable=PageRequest.of(page,size,sort);
+        return contactRepo.findByNameContainingAndUser(name,user, pageable);
+    }
+
+    @Override
+    public Page<Contact> searchByEmail(String email, int page, int size, String sortBy, String sortDir, User user) {
+        Sort sort=sortDir.equals("desc")?Sort.by(sortBy).descending():Sort.by(sortBy).ascending();
+        var pageable=PageRequest.of(page,size,sort);
+        return contactRepo.findByEmailContainingAndUser(email,user, pageable);
+    }
+
+    @Override
+    public Page<Contact> searchByPhoneNumber(String phoneNumber, int page, int size, String sortBy, String sortDir, User user) {
+        Sort sort=sortDir.equals("desc")?Sort.by(sortBy).descending():Sort.by(sortBy).ascending();
+        var pageable=PageRequest.of(page,size,sort);
+        return contactRepo.findByPhoneNumberContainingAndUser(phoneNumber,user, pageable);
+    }
+
+   
+
+  
+
 }
