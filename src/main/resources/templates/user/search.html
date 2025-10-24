@@ -230,22 +230,20 @@
                                         <p class="text-sm text-gray-600 dark:text-gray-400">All your saved contacts</p>
                                     </div>
                                 </div>
-                                <!-- show the no of users -->
-
+                                <!-- viw  number of contacts -->
                                 <div
                                     class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
                                     <i class="fa-solid fa-users text-purple-600 dark:text-purple-400"></i>
                                     <p class="text-sm font-medium text-gray-900 dark:text-white">
+
                                         <span
-                                            th:if="${contactSearchForm.query != null and !contactSearchForm.query.isEmpty()}">
-                                            Found <span class="font-bold"
-                                                th:text="${pageContact.totalElements}">0</span> contact(s) matching
-                                            <span class="font-semibold"
-                                                th:text="${contactSearchForm.query}">search</span>
+                                            th:unless="${contactSearchForm.query != null and !contactSearchForm.query.isEmpty()}">
+                                            Total Contacts: <span class="font-bold"
+                                                th:text="${pageContact.totalElements}">0</span>
                                         </span>
                                     </p>
                                 </div>
-
+                                <div th:replace="~{message::messagebox}"></div>
                                 <!-- Enhanced Search Section -->
                                 <div class="search-container">
                                     <form th:action="@{'/user/contact/search'}" th:object="${contactSearchForm}"
@@ -398,15 +396,15 @@
                                         </td>
                                         <td class="px-6 py-5">
                                             <div class="flex gap-2">
-                                                <button
+                                                <button th:onclick="deleteContact([[${c.id}]])"
                                                     class="action-btn w-9 h-9 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 text-red-600 dark:text-red-400">
                                                     <i class="fa-solid fa-trash"></i>
-                                                </button>
+                                            </button>
                                                 <a
                                                     class="action-btn w-9 h-9 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400">
                                                     <i class="fa-solid fa-pen"></i>
                                                 </a>
-                                                <button
+                                                <button th:onclick="loadContactData([[${c.id}]])"
                                                     class="action-btn w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400">
                                                     <i class="fa-solid fa-eye"></i>
                                                 </button>
@@ -425,7 +423,7 @@
 
                                     <!-- Previous Button -->
                                     <li data-th-unless="${pageContact.first}">
-                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${pageContact.number-1}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
+                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page=' + ${pageContact.number-1}}"
                                             href="#" class="flex items-center justify-center px-5 h-11 leading-tight 
                            text-gray-700 dark:text-gray-200 
                            bg-white dark:bg-gray-800 
@@ -440,7 +438,7 @@
 
                                     <!-- Page Numbers -->
                                     <li data-th-each="index : ${#numbers.sequence(0,pageContact.totalPages-1)}">
-                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${index}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
+                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page='+${index}}"
                                             href="#"
                                             data-th-classappend="${index==pageContact.number? 
                         'bg-purple-100 text-purple-700 border-gray-300 dark:bg-purple-600 dark:text-white dark:border-purple-500 rounded-md ring-1 ring-purple-300 dark:ring-0 shadow-sm' : 
@@ -452,7 +450,7 @@
 
                                     <!-- Next Button -->
                                     <li data-th-unless="${pageContact.last}">
-                                        <a data-th-href="@{'/user/contact/search?size='+${pageSize}+'&page='+${pageContact.number+1}+'&searchType='+${contactSearchForm.searchType}+'&query='+${contactSearchForm.query}  }"
+                                        <a data-th-href="@{'/user/contact?size='+${pageSize}+'&page=' + ${pageContact.number+1}}"
                                             href="#" class="flex items-center justify-center px-5 h-11 leading-tight 
                            text-gray-700 dark:text-gray-200 
                            bg-white dark:bg-gray-800 
@@ -491,8 +489,10 @@
                     </div>
                 </div>
             </div>
+            <div th:replace="~{user/contact_modal::contact_modal}"></div>
         </div>
     </div>
+    <script th:src="@{/js/contact.js}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const searchType = document.getElementById('search-type');
@@ -513,6 +513,7 @@
             });
         });
     </script>
+
 
 </body>
 

@@ -1,0 +1,153 @@
+<div th:fragment="contact_modal">
+    <!-- Main modal -->
+    <div id="view_contact_modal" tabindex="-1" aria-hidden="true" 
+         class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-4 w-full max-w-3xl max-h-full">
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-2xl shadow-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                
+                <!-- Modal header with gradient -->
+                <div class="relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-10"></div>
+                    <div class="relative flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-4">
+                            <img id="contact_image" 
+                                 src="/images/user.png" 
+                                 class="w-16 h-16 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
+                                 onerror="this.src='/images/user.png'">
+                            <div>
+                                <h3 id="contact_name" class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    Contact Name
+                                </h3>
+                                <p id="contact_email" class="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 mt-1">
+                                    <i class="fa-solid fa-envelope text-xs"></i>
+                                    <span>email@example.com</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <button onclick="closeContactModal()" type="button" 
+                                class="text-gray-400 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm w-10 h-10 inline-flex justify-center items-center shadow-sm transition-all duration-200">
+                            <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal body -->
+                <div class="p-6 space-y-6">
+                    
+                    <!-- Contact Information Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- Phone Number -->
+                        <div class="flex items-start gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800">
+                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                                <i class="fa-solid fa-phone text-white"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">Phone Number</p>
+                                <p id="contact_phoneNumber" class="text-sm font-medium text-gray-900 dark:text-white mt-1 break-all">
+                                    +1234567890
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="flex items-start gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                                <i class="fa-solid fa-location-dot text-white"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Address</p>
+                                <p id="contact_address" class="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">
+                                    123 Main Street
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Description -->
+                    <div class="flex items-start gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                        <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <i class="fa-solid fa-align-left text-white"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Description</p>
+                            <p id="contact_description" class="text-sm text-gray-700 dark:text-gray-300 mt-1 break-words leading-relaxed">
+                                No description available
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-link text-gray-500"></i>
+                            Social Links
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Website Link -->
+                            <a id="contact_website_container" href="#" target="_blank"
+                               class="hidden group flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200 hover:scale-105">
+                                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-lg flex items-center justify-center shadow-sm">
+                                    <i class="fa-solid fa-globe text-white"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-600 dark:text-gray-400">Website</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">Visit Website</p>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-gray-400 group-hover:text-green-500 transition-colors"></i>
+                            </a>
+
+                            <!-- LinkedIn Link -->
+                            <a id="contact_linkedin_container" href="#" target="_blank"
+                               class="hidden group flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200 hover:scale-105">
+                                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                                    <i class="fa-brands fa-linkedin text-white"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-600 dark:text-gray-400">LinkedIn</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">View Profile</p>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                            </a>
+                        </div>
+
+                        <!-- No Links Message -->
+                        <div id="contact_no_links" class="hidden p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 text-center">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                <i class="fa-solid fa-link-slash mr-2"></i>
+                                No social links available
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Favorite Badge -->
+                    <div id="contact_favorite" class="hidden flex items-center gap-2 p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <i class="fa-solid fa-star text-yellow-500 text-lg"></i>
+                        <span class="text-sm font-semibold text-yellow-700 dark:text-yellow-400">Favorite Contact</span>
+                    </div>
+
+                </div>
+
+                <!-- Modal footer -->
+                <div class="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        <i class="fa-solid fa-circle-info mr-1"></i>
+                        Contact ID: <span id="contact_id" class="font-mono">N/A</span>
+                    </p>
+                    <button onclick="closeContactModal()" type="button" 
+                            class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 transition-all duration-200">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

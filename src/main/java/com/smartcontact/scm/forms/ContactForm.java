@@ -38,5 +38,6 @@ public class ContactForm {
     private boolean favorite;
     @ValidFile
     private MultipartFile contactPic;
+    private String pictureUrl;
 
 }

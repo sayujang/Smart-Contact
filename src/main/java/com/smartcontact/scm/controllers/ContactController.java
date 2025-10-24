@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -142,5 +143,69 @@ public class ContactController {
         logger.info("Search Type: " + searchType);
         logger.info("Query: " + query);
         return "user/search";
+    }
+    @RequestMapping("/delete/{contactId}")
+    public String deleteContact(@PathVariable String contactId, HttpSession session)
+    {
+        contactService.delete(contactId);
+         Message message=Message.builder().content("Contact Deleted Successfully!").type(MessageType.green).build();
+            session.setAttribute("message", message);  
+        return "redirect:/user/contact";
+    }
+    @RequestMapping("/update_view/{contactId}")
+    public String updateViewContact(@PathVariable String contactId,Model model)
+    {
+        Contact contact=contactService.getById(contactId);
+        ContactForm contactForm=new ContactForm();
+        contactForm.setName(contact.getName());
+        contactForm.setEmail(contact.getEmail());
+        contactForm.setAddress(contact.getAddress());
+        contactForm.setDescription(contact.getDescription());
+        contactForm.setPhoneNumber(contact.getPhoneNumber());
+        contactForm.setLinkedInLink(contact.getLinkedInLink());
+        contactForm.setWebsiteLink(contact.getWebsiteLink());
+        contactForm.setFavorite(contact.isFavorite());
+        contactForm.setPictureUrl(contact.getPicture());
+        model.addAttribute("contactForm", contactForm);
+        model.addAttribute("contactId",contactId );
+        return "user/update_view";
+    }
+    @RequestMapping("/update/{contactId}")
+    public String updateContact(@PathVariable String contactId,@Valid @ModelAttribute ContactForm contactForm,BindingResult bindingResult,Model model,HttpSession session)
+    {
+
+        if(bindingResult.hasErrors())
+        {
+            Message message = Message.builder().content("Please correct the shown errors!").type(MessageType.red)
+                    .build();
+            session.setAttribute("message", message);
+            return "user/update_view";
+        }
+        var con = contactService.getById(contactId);
+        con.setId(contactId);
+        con.setName(contactForm.getName());
+        con.setEmail(contactForm.getEmail());
+        con.setPhoneNumber(contactForm.getPhoneNumber());
+        con.setAddress(contactForm.getAddress());
+        con.setDescription(contactForm.getDescription());
+        con.setFavorite(contactForm.isFavorite());
+        con.setWebsiteLink(contactForm.getWebsiteLink());
+        con.setLinkedInLink(contactForm.getLinkedInLink());
+
+        if (contactForm.getContactPic() != null && !contactForm.getContactPic().isEmpty()) {
+            logger.info("file is not empty");
+            String fileName = UUID.randomUUID().toString();
+            String imageUrl = imageService.uploadImage(contactForm.getContactPic(), fileName);
+            con.setCloudinaryPublicId(fileName);
+            con.setPicture(imageUrl);
+            contactForm.setPictureUrl(imageUrl);
+
+        } else {
+            logger.info("file is empty");
+        }
+        var updateCon = contactService.update(con);
+        Message message = Message.builder().content("Contact Updated Succesfully!").type(MessageType.green).build();
+        session.setAttribute("message", message);
+        return "redirect:/user/contact/update_view/"+contactId;
     }
 }

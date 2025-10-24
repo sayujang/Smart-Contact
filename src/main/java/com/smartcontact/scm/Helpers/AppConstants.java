@@ -7,5 +7,5 @@ public class AppConstants {
     public static final String CONTACT_PIC_WIDTH="500";
     public static final String CONTACT_PIC_HEIGHT="500";
     public static final String CONTACT_PIC_CROP="fill";
-    public static final int PAGE_SIZE=3;
+    public static final int PAGE_SIZE=5;
 }
