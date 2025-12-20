@@ -389,3 +389,126 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('beforeunload', function() {
     disconnectWebSocket();
 });
+async function handleFileUpload(inputElement) {
+    const file = inputElement.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        // 1. Upload to Java Backend
+        const response = await fetch('/api/chat/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const fileUrl = data.url;
+            const fileName = file.name; // Keep original name for display
+            
+            // 2. Determine Message Type
+            const isImage = file.type.startsWith('image/');
+            let messageContent = "";
+
+            if (isImage) {
+                // Format: IMG:URL
+                messageContent = "IMG:" + fileUrl;
+            } else {
+                // Format: FILE:URL|OriginalName
+                messageContent = "FILE:" + fileUrl + "|" + fileName;
+            }
+
+            // 3. Send via WebSocket
+            sendFileMessage(messageContent); 
+        } else {
+            alert("Upload failed!");
+        }
+    } catch (error) {
+        console.error("Error uploading file:", error);
+    }
+    
+    // Reset input
+    inputElement.value = ''; 
+}
+
+function sendFileMessage(contentString) {
+    if (!stompClient || !stompClient.connected) return;
+
+    const chatMessage = {
+        senderId: currentLoggedInUserId,
+        receiverId: currentChatUserId,
+        content: contentString, 
+        type: 'TEXT', // We keep type as TEXT and use the prefix to identify content
+        timestamp: new Date().toISOString()
+    };
+
+    stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+    
+}
+function displayMessage(message, animate = true) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const isSender = message.senderId === currentLoggedInUserId;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
+    
+    const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit'
+    });
+    
+    const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
+    const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-t-lg rounded-br-lg";
+    
+    // --- CONTENT RENDERING LOGIC ---
+    let contentHtml = '';
+    const rawContent = message.content || "";
+
+    if (rawContent.startsWith("IMG:")) {
+        // SCENARIO 1: IMAGE
+        const url = rawContent.substring(4);
+        contentHtml = `
+            <img src="${url}" 
+                 class="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition" 
+                 onclick="window.open(this.src, '_blank')">`;
+
+    } else if (rawContent.startsWith("FILE:")) {
+        // SCENARIO 2: GENERIC FILE
+        // expected format: FILE:url|filename
+        const parts = rawContent.substring(5).split("|");
+        const url = parts[0];
+        const fileName = parts.length > 1 ? parts[1] : "Download File";
+
+        // Render a File Card
+        contentHtml = `
+            <a href="${url}" target="_blank" class="flex items-center space-x-3 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition group">
+                <div class="bg-gray-100 dark:bg-gray-600 p-2 rounded text-gray-600 dark:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate underline group-hover:no-underline">${escapeHtml(fileName)}</p>
+                    <p class="text-xs opacity-70">Click to download</p>
+                </div>
+            </a>`;
+            
+    } else {
+        // SCENARIO 3: PLAIN TEXT
+        contentHtml = `<p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(rawContent)}</p>`;
+    }
+    // -------------------------------
+
+    messageDiv.innerHTML = `
+        <div class="max-w-[80%] lg:max-w-[70%]">
+            <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
+                ${contentHtml}
+            </div>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ${isSender ? 'text-right' : 'text-left'}">${time}</p>
+        </div>
+    `;
+    
+    messagesDiv.appendChild(messageDiv);
+    scrollToBottom();
+}
