@@ -1,0 +1,23 @@
+package com.smartcontact.scm.repositories;
+
+import com.smartcontact.scm.entities.ChatMessage;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
+    
+    // FIX: Using @Query ensures we check both directions accurately
+    // Logic: (Sender = A AND Receiver = B) OR (Sender = B AND Receiver = A)
+    @Query(value = "{ '$or': [ " +
+           "{ 'senderId': ?0, 'receiverId': ?1 }, " +
+           "{ 'senderId': ?1, 'receiverId': ?0 } " +
+           "] }", sort = "{ 'timestamp' : 1 }")
+    List<ChatMessage> findByChatHistory(String userId1, String userId2);
+    
+    
+    // Keep these for your unread counts
+    long countByReceiverIdAndStatus(String receiverId, ChatMessage.MessageStatus status);
+}

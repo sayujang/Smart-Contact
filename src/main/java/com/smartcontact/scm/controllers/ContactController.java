@@ -1,6 +1,8 @@
 package com.smartcontact.scm.controllers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -28,7 +30,8 @@ import com.smartcontact.scm.forms.ContactSearchForm;
 import com.smartcontact.scm.services.ContactService;
 import com.smartcontact.scm.services.ImageService;
 import com.smartcontact.scm.services.UserService;
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 

@@ -1,22 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="parent(content,title,script)" >
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="parent(content,title,script)">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:replace="${title}">Base page</title>
     <link rel="stylesheet" data-th-href="@{'/css/output.css'}" />
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
+
 <body class="h-screen w-full bg-gray-100 text-black dark:bg-gray-800 dark:text-white">
+
     <!-- if user is logged in show custom navbar -->
     <div th:if="${loginUser}">
-    <div th:replace="~{user/user_navbar::usernavbar}"></div>
+        <div th:replace="~{user/user_navbar::usernavbar}"></div>
+
+        <input type="hidden" id="loggedInUserId" th:value="${loginUser.userId}" />
     </div>
-    
+
     <!-- if user is not logged in show normal navbar -->
     <div th:unless="${loginUser}">
-    <div th:replace="~{navbar :: navbar}"></div>
+        <div th:replace="~{navbar :: navbar}"></div>
     </div>
 
     <div class="p-4 pt-20">
@@ -26,5 +33,11 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script th:src="@{'/js/script.js'}"></script>
     <th:block th:replace="${script}"></th:block>
+    <div th:replace="~{chat_modal :: #chatModal}"></div>
+    <script src="/js/chat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
 </body>
+
 </html>
