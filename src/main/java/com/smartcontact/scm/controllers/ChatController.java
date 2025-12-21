@@ -107,9 +107,9 @@ public class ChatController {
         return Map.of("userId", userId, "status", status.getStatus().name(), "lastSeen", status.getLastSeen());
     }
     
-    // @GetMapping("/api/chat/unread/{userId}")
-    // @ResponseBody //tells to return a response body instead of a view
-    // public Map<String, Long> getUnreadCount(@PathVariable String userId) {
-    //     return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
-    // }
+    @GetMapping("/api/chat/unread/{userId}")
+    @ResponseBody //tells to return a response body instead of a view
+    public Map<String, Long> getUnreadCount(@PathVariable String userId) {
+        return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
+    }
 }

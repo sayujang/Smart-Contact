@@ -184,32 +184,7 @@ function sendMessage() {
     }
 }
 
-// function displayMessage(message, animate = true) {
-//     const messagesDiv = document.getElementById('chatMessages');
-//     const isSender = message.senderId === currentLoggedInUserId;
-    
-//     const messageDiv = document.createElement('div');
-//     messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
-    
-//     const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-//         hour: '2-digit', minute: '2-digit'
-//     });
-    
-//     const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
-//     const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-t-lg rounded-br-lg";
-    
-//     messageDiv.innerHTML = `
-//         <div class="max-w-[80%] lg:max-w-[70%]">
-//             <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
-//                 <p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(message.content)}</p>
-//             </div>
-//             <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ${isSender ? 'text-right' : 'text-left'}">${time}</p>
-//         </div>
-//     `;
-    
-//     messagesDiv.appendChild(messageDiv);
-//     scrollToBottom();
-// }
+
 
 // Handle Enter key press
 function handleMessageKeyPress(event) {
