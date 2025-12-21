@@ -1,37 +1,37 @@
-// chat.js - Pure JavaScript Chat Implementation
+//chat implementation
 
 let stompClient = null;
-let currentChatUserId = null;
+let currentChatUserId = null; //the user the loggedin user is chatting to 
 let currentChatUserName = null;
-let currentLoggedInUserId = null;
+let currentLoggedInUserId = null; 
 let typingTimeout = null; // Used for UI debounce
 
-// ==========================================
-// 1. WEBSOCKET CONNECTION
-// ==========================================
 
+//websocket connection:
 function connectWebSocket(userId) {
     // Prevent double connections
     if (stompClient !== null && stompClient.connected) {
         return;
     }
 
-    // SAFETY: If userId is missing/null, do nothing.
+    //If userId is missing/null, do nothing.
     if (!userId) return;
 
     currentLoggedInUserId = userId;
-    const socket = new SockJS('/ws');
-    stompClient = Stomp.over(socket);
-    stompClient.debug = null; // Hide logs
+    const socket = new SockJS('/ws'); //create  a socket
+    stompClient = Stomp.over(socket); //wrap around stomp protocol
+    stompClient.debug = null; // Hide logs to keep browser console clean
 
+
+    //sends a stomp connect frame;
     stompClient.connect({}, function(frame) {
         console.log('Connected to WebSocket as ' + userId);
 
-        // A. Subscribe to Messages
+        //matches my backend logic messagingTemplate.convertAndSend("/queue/messages/" + receiverId, ...)
         stompClient.subscribe('/queue/messages/' + userId, function(message) {
             const chatMessage = JSON.parse(message.body);
             
-            // Safe check for modal existence
+            //check for modal existence
             const modal = document.getElementById('chatModal');
             if (modal && !modal.classList.contains('hidden')) {
                 displayMessage(chatMessage);
@@ -40,13 +40,13 @@ function connectWebSocket(userId) {
             }
         });
 
-        // B. Subscribe to Status Updates (Real-time Online/Offline)
-        stompClient.subscribe('/topic/user.status', function(message) {
+        //subscribe to status updates (connected to addUser method in chat controller)
+        stompClient.subscribe('/topic/user.status', function(message) { //every client subscribes to the same topic/user.status 
             const payload = JSON.parse(message.body);
             updateUserStatus(payload.userId, payload.status);
         });
 
-        // C. [NEW] Subscribe to Typing Indicators
+        //subscribe to typing indicators (connected to handleTyping function in chat controller)
         stompClient.subscribe('/queue/typing/' + userId, function(message) {
              const data = JSON.parse(message.body);
              // Only show if we are currently looking at the user who is typing
@@ -55,7 +55,7 @@ function connectWebSocket(userId) {
              }
         });
 
-        // D. Notify Server we are Online
+        //notify Server we are Online (connected to addUser method in chat controller)
         stompClient.send("/app/chat.connect", {}, JSON.stringify({ userId: userId }));
 
     }, function(error) {
@@ -64,7 +64,7 @@ function connectWebSocket(userId) {
 }
 
 function disconnectWebSocket() {
-    if (stompClient !== null) {
+    if (stompClient !== null) { //check if connection exists
         stompClient.send("/app/chat.disconnect", {}, JSON.stringify({
             userId: currentLoggedInUserId
         }));
@@ -73,10 +73,7 @@ function disconnectWebSocket() {
     console.log("Disconnected");
 }
 
-// ==========================================
-// 2. MODAL & UI LOGIC
-// ==========================================
-
+//only async function can have await statements
 async function openChatModal(contactEmail, contactName, contactId) {
     console.log('=== OPENING CHAT MODAL ===');
     
@@ -94,7 +91,7 @@ async function openChatModal(contactEmail, contactName, contactId) {
     // Check if contact is a registered user
     try {
         const url = `/api/contact/is-user/${encodeURIComponent(contactEmail)}`;
-        const response = await fetch(url);
+        const response = await fetch(url); //fetch always returns a promise. a promise object can have be resolved(success) or rejected(failure)
         const data = await response.json();
         
         if (!data.isUser) {
@@ -108,7 +105,7 @@ async function openChatModal(contactEmail, contactName, contactId) {
         // Ensure WebSocket is connected
         if (!stompClient || !stompClient.connected) {
             connectWebSocket(currentLoggedInUserId);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1000)); //waits for 1s as websocket connection can take time
         }
         
         // Update modal header
@@ -124,13 +121,13 @@ async function openChatModal(contactEmail, contactName, contactId) {
         const typingInd = document.getElementById('headerTypingIndicator');
         if(typingInd) typingInd.classList.add('hidden');
 
-        // Clear previous messages
+        // Clear previous messages may be with another user
         document.getElementById('chatMessages').innerHTML = '';
         
-        // Load chat history
+        // Load chat history before model opens up
         await loadChatHistory(currentLoggedInUserId, currentChatUserId);
         
-        // Check user status immediately
+        // Check user status immediately before model opens up
         await checkUserStatus(currentChatUserId);
         
         // Show modal
@@ -141,7 +138,7 @@ async function openChatModal(contactEmail, contactName, contactId) {
         // Focus on input
         document.getElementById('messageInput').focus();
         
-    } catch (error) {
+    } catch (error) { //the failed promise is catched here
         console.error('Error opening chat:', error);
     }
 }
@@ -153,26 +150,22 @@ function closeChatModal() {
     currentChatUserName = null;
 }
 
-// ==========================================
-// 3. MESSAGE LOGIC
-// ==========================================
-
 async function loadChatHistory(userId1, userId2) {
     try {
         const response = await fetch(`/api/chat/history/${userId1}/${userId2}`);
         const messages = await response.json();
         messages.forEach(message => displayMessage(message, false));
-        scrollToBottom();
-    } catch (error) {
+        scrollToBottom(); //view recent messages
+    } catch (error) { //catch the failed promise so that it doesn't crash
         console.error('Error loading chat history:', error);
     }
 }
 
 function sendMessage() {
     const input = document.getElementById('messageInput');
-    const content = input.value.trim();
+    const content = input.value.trim(); //removes spaces 
     
-    if (!content || !stompClient || !stompClient.connected) return;
+    if (!content || !stompClient || !stompClient.connected) return; //both stomp client and the websocket connections need to exists
     
     const chatMessage = {
         senderId: currentLoggedInUserId,
@@ -183,54 +176,49 @@ function sendMessage() {
     };
     
     try {
-        stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+        //send message to sendMessage function in backend
+        stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage)); //websockets can only transport strings
         input.value = '';
-        // No need to explicitly stop typing, the UI timeout on the other end handles it
     } catch (error) {
         console.error('Error sending message:', error);
     }
 }
 
-function displayMessage(message, animate = true) {
-    const messagesDiv = document.getElementById('chatMessages');
-    const isSender = message.senderId === currentLoggedInUserId;
+// function displayMessage(message, animate = true) {
+//     const messagesDiv = document.getElementById('chatMessages');
+//     const isSender = message.senderId === currentLoggedInUserId;
     
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
+//     const messageDiv = document.createElement('div');
+//     messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
     
-    const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit'
-    });
+//     const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
+//         hour: '2-digit', minute: '2-digit'
+//     });
     
-    const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
-    const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-t-lg rounded-br-lg";
+//     const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
+//     const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-t-lg rounded-br-lg";
     
-    messageDiv.innerHTML = `
-        <div class="max-w-[80%] lg:max-w-[70%]">
-            <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
-                <p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(message.content)}</p>
-            </div>
-            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ${isSender ? 'text-right' : 'text-left'}">${time}</p>
-        </div>
-    `;
+//     messageDiv.innerHTML = `
+//         <div class="max-w-[80%] lg:max-w-[70%]">
+//             <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
+//                 <p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(message.content)}</p>
+//             </div>
+//             <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ${isSender ? 'text-right' : 'text-left'}">${time}</p>
+//         </div>
+//     `;
     
-    messagesDiv.appendChild(messageDiv);
-    scrollToBottom();
-}
-
-// ==========================================
-// 4. STATUS & TYPING LOGIC
-// ==========================================
+//     messagesDiv.appendChild(messageDiv);
+//     scrollToBottom();
+// }
 
 // Handle Enter key press
 function handleMessageKeyPress(event) {
     if (event.key === 'Enter') {
         sendMessage();
     }
-    // Note: handleTyping is now called via 'oninput' in HTML
 }
 
-// [MODIFIED] Send Typing Signal
+//Send Typing Signal
 function handleTyping() {
     if (!stompClient || !currentChatUserId) return;
     
@@ -241,7 +229,7 @@ function handleTyping() {
     }));
 }
 
-// [NEW] Receive Typing Signal & Toggle UI
+// Receive Typing Signal & Toggle UI
 function showTypingAnimation() {
     const indicator = document.getElementById('headerTypingIndicator'); // The header text
     const statusText = document.getElementById('chatUserStatus');       // The 'offline/online' text
@@ -273,8 +261,7 @@ async function checkUserStatus(userId) {
     }
 }
 
-// CRITICAL: This function updates both the List Dot AND the Modal Text
-// (PRESERVED FROM YOUR WORKING CODE)
+//This function updates both the List Dot AND the Modal Text
 function updateUserStatus(userId, status) {
     console.log(`Processing update -> User: ${userId}, Status: ${status}`);
 
@@ -327,15 +314,10 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==========================================
-// 5. INITIALIZATION
-// ==========================================
-
-// (PRESERVED EXACTLY TO ENSURE DOTS WORK)
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== Chat System Initializing ===');
     
-    // 1. Connect WebSocket
+    // Connect WebSocket
     const userIdElement = document.getElementById('loggedInUserId');
     if (userIdElement && userIdElement.value) {
         currentLoggedInUserId = userIdElement.value;
@@ -390,11 +372,11 @@ window.addEventListener('beforeunload', function() {
     disconnectWebSocket();
 });
 async function handleFileUpload(inputElement) {
-    const file = inputElement.files[0];
+    const file = inputElement.files[0]; //files property is always a list for input type=file
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", file); //matches requestparam in fileuploadcontroller
 
     try {
         // 1. Upload to Java Backend
@@ -443,7 +425,7 @@ function sendFileMessage(contentString) {
         type: 'TEXT', // We keep type as TEXT and use the prefix to identify content
         timestamp: new Date().toISOString()
     };
-
+    //send to sendmessage function in chatcontroller
     stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
     
 }

@@ -17,8 +17,9 @@ import java.util.Map;
 @RequestMapping("/api/chat")
 public class FileUploadController {
 
-    // Ideally, configure this path in application.properties
-    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
+    
+    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/"; //static means spring boot can serve these files directly like http://localhost:8000/uploads/filename.jpg
+
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
@@ -37,9 +38,9 @@ public class FileUploadController {
             Map<String, String> response = new HashMap<>();
             response.put("url", "/uploads/" + fileName); // The link the frontend needs
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response); //return http status 200ok with body having json "url": /uploads/filename.png
         } catch (IOException e) {
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(500).build(); //returns status 500 ie internal server error
         }
     }
 }

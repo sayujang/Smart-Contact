@@ -31,7 +31,7 @@ public class WebSocketEventListener {
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         
-        // 1. RETRIEVE THE USER ID (We saved this in the Controller earlier)
+        //retrieve the userid that was just saved in the chat controllers addUser method 
         String userId = (String) headerAccessor.getSessionAttributes().get("userId");
         
         if (userId != null) {

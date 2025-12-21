@@ -24,30 +24,28 @@ public class ChatController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    // ---------------------------------------------------
-    // 1. SENDING MESSAGES
-    // ---------------------------------------------------
+    
+    //sending messages
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessage message) {
         // Save to Database
         ChatMessage savedMessage = chatService.saveMessage(message);
 
-        // 1. Send to RECEIVER
+        // 1. Send to receiver
         messagingTemplate.convertAndSend(
             "/queue/messages/" + message.getReceiverId(), 
             savedMessage
         );
 
-        // 2. Send to SENDER (so it shows up on their screen immediately)
+        // 2. Send to sender (so it shows up on their screen immediately)
         messagingTemplate.convertAndSend(
             "/queue/messages/" + message.getSenderId(), 
             savedMessage
         );
     }
 
-    // ---------------------------------------------------
-    // 2. TYPING INDICATOR
-    // ---------------------------------------------------
+
+    //typing indicators
     @MessageMapping("/chat.typing")
     public void handleTyping(@Payload Map<String, String> payload) {
         String receiverId = payload.get("receiverId");
@@ -59,35 +57,37 @@ public class ChatController {
         );
     }
 
-    // ---------------------------------------------------
-    // 3. CONNECTION HANDLING (Fixed)
-    // ---------------------------------------------------
-    // This replaces the duplicate methods. 
-    // It handles "Online" status AND saves the userId for disconnection events.
+    // It handles online status and saves the userId for disconnection events.
     @MessageMapping("/chat.connect")
-    @SendTo("/topic/user.status")
+    @SendTo("/topic/user.status") //doesn't add any prefix
     public Map<String, String> addUser(
             @Payload Map<String, String> data, 
             SimpMessageHeaderAccessor headerAccessor
     ) {
         String userId = data.get("userId");
         
-        // 1. CRITICAL: Save User ID in the WebSocket Session
-        // This allows the EventListener (on the server) to know "Who Disconnected" later.
+        // Save User ID in the WebSocket Session
+        // This allows the eventlistener (on the server) to know who disconnected later.
         if (userId != null) {
-            headerAccessor.getSessionAttributes().put("userId", userId);
+            headerAccessor.getSessionAttributes().put("userId", userId); //websockets are stateful (connection never closes like http connections) so a connection must be uniquely identified 
             
-            // 2. Update DB to Online
+            // update db to Online
             chatService.updateUserStatus(userId, UserStatus.Status.ONLINE, headerAccessor.getSessionId());
         }
         
-        // 3. Broadcast to everyone subscribed to /topic/user.status
+        // broadcast to everyone subscribed to /topic/user.status
         return Map.of("userId", userId, "status", "ONLINE");
     }
 
-    // ---------------------------------------------------
-    // 4. API ENDPOINTS (For loading history via HTTP)
-    // ---------------------------------------------------
+   @MessageMapping("/chat.disconnect")
+   public void disconnectUser(@Payload Map<String, String> disconnectuserId)
+   {
+     String userId=disconnectuserId.get("userId");
+     System.out.println("LOG: User " + userId + " disconnected intentionally(logged out).");
+   }
+
+
+    //API ENDPOINTS (For loading history via HTTP)
     @GetMapping("/api/chat/history/{userId1}/{userId2}")
     @ResponseBody
     public List<ChatMessage> getChatHistory(@PathVariable String userId1, @PathVariable String userId2) {
@@ -107,9 +107,9 @@ public class ChatController {
         return Map.of("userId", userId, "status", status.getStatus().name(), "lastSeen", status.getLastSeen());
     }
     
-    @GetMapping("/api/chat/unread/{userId}")
-    @ResponseBody
-    public Map<String, Long> getUnreadCount(@PathVariable String userId) {
-        return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
-    }
+    // @GetMapping("/api/chat/unread/{userId}")
+    // @ResponseBody //tells to return a response body instead of a view
+    // public Map<String, Long> getUnreadCount(@PathVariable String userId) {
+    //     return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
+    // }
 }

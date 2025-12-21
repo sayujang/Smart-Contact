@@ -9,25 +9,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.services.UserService;
-import org.springframework.web.bind.annotation.*;
+// import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-import com.smartcontact.scm.entities.Contact;
-import com.smartcontact.scm.services.ContactService;
+// import com.smartcontact.scm.entities.Contact;
+// import com.smartcontact.scm.services.ContactService;
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
     
-    @Autowired
-    private ContactService contactService;
+    // @Autowired
+    // private ContactService contactService;
     @Autowired
 private UserService userService;
-    @GetMapping("contact/{contactId}")
-    public Contact getContact(@PathVariable String contactId)
-    {
-        return contactService.getById(contactId);
-    }
+    // @GetMapping("contact/{contactId}")
+    // public Contact getContact(@PathVariable String contactId)
+    // {
+    //     return contactService.getById(contactId);
+    // }
+
+    //checks whether the email is a registered user and then returns all user info including userId
     @GetMapping("/contact/is-user/{email}")
 public Map<String, Object> isContactAUser(@PathVariable String email) {
     Map<String, Object> response = new HashMap<>();

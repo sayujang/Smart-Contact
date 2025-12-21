@@ -39,6 +39,7 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(authorize -> {
             // WebSocket endpoints - must be accessible
             authorize.requestMatchers("/ws/**").permitAll();
+            //it misses stomp message security as these are not real http endpoints
             authorize.requestMatchers("/app/**").permitAll();
             authorize.requestMatchers("/topic/**").permitAll();
             authorize.requestMatchers("/queue/**").permitAll();
