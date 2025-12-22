@@ -13,12 +13,14 @@ import com.smartcontact.scm.Helpers.ResourceNotFoundException;
 import com.smartcontact.scm.entities.Contact;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.repositories.ContactRepo;
+import com.smartcontact.scm.repositories.UserRepo;
 import com.smartcontact.scm.services.ContactService;
 @Service
 public class contactServiceimpl implements ContactService {
 
     @Autowired
     ContactRepo contactRepo;
+    UserRepo userRepo;
     @Override
     public Contact save(Contact contact) {
         String contactId=UUID.randomUUID().toString();
@@ -89,7 +91,6 @@ public class contactServiceimpl implements ContactService {
     }
 
    
-
   
 
 }

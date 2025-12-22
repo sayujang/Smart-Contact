@@ -1,6 +1,9 @@
 package com.smartcontact.scm.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -8,10 +11,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import com.smartcontact.scm.Helpers.Helper;
 import com.smartcontact.scm.Helpers.Message;
 import com.smartcontact.scm.Helpers.MessageType;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.forms.UserForm;
+import com.smartcontact.scm.services.ChatService;
 import com.smartcontact.scm.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -29,6 +34,8 @@ public class PageController {
     {
         this.userService=userService;
     }
+    @Autowired
+    private ChatService chatService;
     @GetMapping("/")
     public String index() {
         return "redirect:/home";
@@ -108,6 +115,20 @@ public class PageController {
 
 
         return "redirect:/register";
+    }
+    @GetMapping("/user/chat/requests")
+    public String viewMessageRequests(Model model, Authentication authentication) {
+        // 1. Get Logged in User
+        String username = Helper.getEmailOfLoggedInUser(authentication);
+        User user = userService.getUserByEmail(username);
+
+        // 2. Fetch Unknown Users using the Service method we created earlier
+        List<User> unknownUsers = chatService.getUnknownUsers(user.getUserId());
+
+        // 3. Add to Model
+        model.addAttribute("unknownUsers", unknownUsers);
+
+        return "user/message_requests";
     }
 
 }

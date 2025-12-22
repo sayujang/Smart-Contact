@@ -1,14 +1,22 @@
 package com.smartcontact.scm.controllers;
 
+import com.smartcontact.scm.Helpers.Helper;
+import com.smartcontact.scm.Helpers.ResourceNotFoundException;
 import com.smartcontact.scm.entities.ChatMessage;
+import com.smartcontact.scm.entities.Contact;
+import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
+import com.smartcontact.scm.repositories.ContactRepo;
 import com.smartcontact.scm.services.ChatService;
+import com.smartcontact.scm.services.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +32,11 @@ public class ChatController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    ContactRepo contactRepo;
     
     //sending messages
     @MessageMapping("/chat.send")
@@ -59,32 +72,55 @@ public class ChatController {
 
     // It handles online status and saves the userId for disconnection events.
     @MessageMapping("/chat.connect")
-    @SendTo("/topic/user.status") //doesn't add any prefix
-    public Map<String, String> addUser(
-            @Payload Map<String, String> data, 
-            SimpMessageHeaderAccessor headerAccessor
-    ) {
-        String userId = data.get("userId");
+    public void addUser(@Payload Map<String, String> payload) {
+        String userId = payload.get("userId");
         
-        // Save User ID in the WebSocket Session
-        // This allows the eventlistener (on the server) to know who disconnected later.
-        if (userId != null) {
-            headerAccessor.getSessionAttributes().put("userId", userId); //websockets are stateful (connection never closes like http connections) so a connection must be uniquely identified 
+        // A. Update the Real DB Status (Using your existing Service)
+        // You might need to pass a session ID, or just dummy text if not tracking sessions strictly
+        chatService.updateUserStatus(userId, UserStatus.Status.ONLINE, "websocket-session");
+
+        // B. Secure Notification Loop
+        User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("user not found"));
+        
+        // Find everyone who has saved ME
+        List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
+
+        for (Contact contactEntry : peopleWhoHaveAddedMe) {
+            User friend = contactEntry.getUser(); 
             
-            // update db to Online
-            chatService.updateUserStatus(userId, UserStatus.Status.ONLINE, headerAccessor.getSessionId());
+            // CHECK: Do I also have them? (Mutual Friend)
+            boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
+
+            if (isMutual) {
+                // Send "ONLINE" update ONLY to this specific friend's private queue
+                Map<String, String> update = Map.of("userId", userId, "status", "ONLINE");
+                messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
+            }
         }
-        
-        // broadcast to everyone subscribed to /topic/user.status
-        return Map.of("userId", userId, "status", "ONLINE");
     }
 
    @MessageMapping("/chat.disconnect")
-   public void disconnectUser(@Payload Map<String, String> disconnectuserId)
-   {
-     String userId=disconnectuserId.get("userId");
-     System.out.println("LOG: User " + userId + " disconnected intentionally(logged out).");
-   }
+    public void disconnectUser(@Payload Map<String, String> payload) {
+        String userId = payload.get("userId");
+        
+        // A. Update DB Status
+        chatService.updateUserStatus(userId, UserStatus.Status.OFFLINE, null);
+
+        // B. Secure Notification Loop
+        User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("no user found"));
+        List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
+
+        for (Contact contactEntry : peopleWhoHaveAddedMe) {
+            User friend = contactEntry.getUser(); 
+            boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
+
+            if (isMutual) {
+                // Send "OFFLINE" to friend's private queue
+                Map<String, String> update = Map.of("userId", userId, "status", "OFFLINE");
+                messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
+            }
+        }
+    }
 
 
     //API ENDPOINTS (For loading history via HTTP)
@@ -94,22 +130,41 @@ public class ChatController {
         return chatService.getConversationHistory(userId1, userId2);
     }
 
-    @GetMapping("/api/chat/status/{userId}")
+    @GetMapping("/api/chat/status/{userId}") // Ensure path matches your JS
     @ResponseBody
-    public Map<String, Object> getUserStatus(@PathVariable String userId) {
-        UserStatus status = chatService.getUserStatus(userId);
-        
-        // Handle case where user has no status record yet
-        if (status == null) {
-            return Map.of("userId", userId, "status", "OFFLINE", "lastSeen", "N/A");
+    public Map<String, Object> getUserStatus(@PathVariable String userId, Authentication authentication) {
+        String myEmail = Helper.getEmailOfLoggedInUser(authentication);
+        User me = userService.getUserByEmail(myEmail); // Me
+        User them = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("user not found"));   // The person I'm checking
+
+        // Mutual Check
+        boolean iHaveThem = contactRepo.existsByUserAndEmail(me, them.getEmail());
+        boolean theyHaveMe = contactRepo.existsByUserAndEmail(them, myEmail);
+
+        boolean isOnline = false;
+
+        // ONLY check real status if we are mutual friends
+        if (iHaveThem && theyHaveMe) {
+            // Use your service's method which reads from UserStatusRepository
+            isOnline = chatService.isUserOnline(userId);
         }
-        
-        return Map.of("userId", userId, "status", status.getStatus().name(), "lastSeen", status.getLastSeen());
+        // If not mutual, 'isOnline' remains false (OFFLINE)
+
+        return Map.of(
+            "userId", userId, 
+            "status", isOnline ? "ONLINE" : "OFFLINE"
+        );
     }
     
     @GetMapping("/api/chat/unread/{userId}")
     @ResponseBody //tells to return a response body instead of a view
     public Map<String, Long> getUnreadCount(@PathVariable String userId) {
         return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
+    }
+    @GetMapping("/api/chat/unknown/{userId}")
+    @ResponseBody
+    public List<User> getUnknownUsers(@PathVariable String userId) {
+        // This returns a list of Users who messaged 'userId' but are NOT in 'userId's contacts
+        return chatService.getUnknownUsers(userId);
     }
 }

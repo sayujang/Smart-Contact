@@ -1,14 +1,18 @@
 package com.smartcontact.scm.services.implementation;
 
 import com.smartcontact.scm.entities.ChatMessage;
+import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
 import com.smartcontact.scm.repositories.ChatMessageRepository;
+import com.smartcontact.scm.repositories.ContactRepo;
+import com.smartcontact.scm.repositories.UserRepo;
 import com.smartcontact.scm.repositories.UserStatusRepository;
 import com.smartcontact.scm.services.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -18,7 +22,10 @@ public class ChatServiceImpl implements ChatService {
     
     @Autowired
     private UserStatusRepository userStatusRepository;
-    
+    @Autowired
+    private UserRepo userRepo;
+    @Autowired
+    private ContactRepo contactRepo;
     @Override
     public ChatMessage saveMessage(ChatMessage message) {
         message.setTimestamp(LocalDateTime.now());
@@ -83,4 +90,21 @@ public boolean isUserOnline(String userId) {
         .map(status -> status.getStatus() == UserStatus.Status.ONLINE)
         .orElse(false);
 }
+@Override
+    public List<User> getUnknownUsers(String currentUserId) {
+        // 1. Get IDs of everyone who has messaged me
+        List<String> senderIds = chatMessageRepository.findDistinctSendersByReceiverId(currentUserId);
+        
+        // 2. Get Emails of everyone I have saved as a contact
+        List<String> myContactEmails = contactRepo.findEmailsByUserId(currentUserId);
+        
+        // 3. Fetch User objects for the sender IDs
+        List<User> senders = userRepo.findAllById(senderIds);
+
+        // 4. Filter: Keep sender ONLY IF their email is NOT in my contact list
+        return senders.stream()
+                .filter(sender -> !myContactEmails.contains(sender.getEmail()))
+                .filter(sender -> !sender.getUserId().equals(currentUserId)) // Ensure I don't see myself
+                .collect(Collectors.toList());
+    }
 }

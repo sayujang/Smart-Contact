@@ -1,11 +1,8 @@
-//chat implementation
-
 let stompClient = null;
 let currentChatUserId = null; //the user the loggedin user is chatting to 
 let currentChatUserName = null;
 let currentLoggedInUserId = null; 
 let typingTimeout = null; // Used for UI debounce
-
 
 //websocket connection:
 function connectWebSocket(userId) {
@@ -41,7 +38,7 @@ function connectWebSocket(userId) {
         });
 
         //subscribe to status updates (connected to addUser method in chat controller)
-        stompClient.subscribe('/topic/user.status', function(message) { //every client subscribes to the same topic/user.status 
+        stompClient.subscribe('/queue/status/' + userId, function(message) { 
             const payload = JSON.parse(message.body);
             updateUserStatus(payload.userId, payload.status);
         });
@@ -74,9 +71,21 @@ function disconnectWebSocket() {
 }
 
 //only async function can have await statements
-async function openChatModal(contactEmail, contactName, contactId) {
+async function openChatModal(contactEmail, contactName, contactId,isUnknown = false) {
     console.log('=== OPENING CHAT MODAL ===');
     
+    const addBtn = document.getElementById('btnAddUnknown');
+    if (addBtn) {
+        if (isUnknown) {
+            // If chatting with a stranger (Message Request), SHOW the button
+            addBtn.classList.remove('hidden');
+            // Set the link so clicking it adds them as a contact
+            addBtn.href = `/user/contact/add?name=${encodeURIComponent(contactName)}&email=${encodeURIComponent(contactEmail)}`;
+        } else {
+            // If chatting with a saved contact, HIDE the button
+            addBtn.classList.add('hidden');
+        }
+    }
     // Get logged-in user ID if not set
     if (!currentLoggedInUserId) {
         const userIdElement = document.getElementById('loggedInUserId');
@@ -112,10 +121,6 @@ async function openChatModal(contactEmail, contactName, contactId) {
         document.getElementById('chatUserName').textContent = data.name;
         document.getElementById('chatUserAvatar').src = data.profilePic || '/images/user.png';
         
-        // Reset Status Text to "Checking..."
-        const statusText = document.getElementById('chatUserStatus');
-        statusText.textContent = '...';
-        statusText.className = 'text-xs text-gray-300';
         
         // Hide typing indicator initially
         const typingInd = document.getElementById('headerTypingIndicator');

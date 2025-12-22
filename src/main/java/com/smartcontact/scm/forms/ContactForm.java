@@ -30,7 +30,6 @@ public class ContactForm {
     @NotBlank(message="Phone Number is required")
     @Pattern(regexp="^\\+?[0-9]{8,15}$", message="Invalid Phone Number")
     private String phoneNumber;
-    @NotBlank(message="Address is required")
     private String address;
     private String description;
     private String websiteLink;

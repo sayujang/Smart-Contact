@@ -1,6 +1,7 @@
 package com.smartcontact.scm.services;
 
 import com.smartcontact.scm.entities.ChatMessage;
+import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
 import java.util.List;
 
@@ -21,4 +22,5 @@ public interface ChatService {
     UserStatus getUserStatus(String userId);
     
     boolean isUserOnline(String userId);
+    List<User> getUnknownUsers(String currentUserId);
 }

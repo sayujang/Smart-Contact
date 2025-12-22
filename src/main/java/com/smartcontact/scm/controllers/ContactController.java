@@ -46,13 +46,13 @@ public class ContactController {
     private ImageService imageService;
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @RequestMapping("/add")
-    public String addContactView(Model model) {
-        ContactForm contactForm = new ContactForm();
-        model.addAttribute("contactForm", contactForm);
+    // @RequestMapping("/add")
+    // public String addContactView(Model model) {
+    //     ContactForm contactForm = new ContactForm();
+    //     model.addAttribute("contactForm", contactForm);
 
-        return "user/add_Contact";
-    }
+    //     return "user/add_Contact";
+    // }
 
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public String saveContacts(@Valid @ModelAttribute("contactForm") ContactForm contactForm, BindingResult result,
@@ -211,4 +211,24 @@ public class ContactController {
         session.setAttribute("message", message);
         return "redirect:/user/contact/update_view/"+contactId;
     }
+    // UPDATED addContactView method to handle pre-filling data
+@RequestMapping("/add")
+public String addContactView(
+    Model model, 
+    @RequestParam(value = "name", required = false) String name, 
+    @RequestParam(value = "email", required = false) String email
+) {
+    ContactForm contactForm = new ContactForm();
+    
+    // If name or email came from the link, pre-fill the form
+    if (name != null) {
+        contactForm.setName(name);
+    }
+    if (email != null) {
+        contactForm.setEmail(email);
+    }
+
+    model.addAttribute("contactForm", contactForm);
+    return "user/add_Contact";
+}
 }
