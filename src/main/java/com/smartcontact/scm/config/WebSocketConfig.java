@@ -26,6 +26,7 @@ import com.smartcontact.scm.services.implementation.SecurityCustomUserDetailServ
 
 @Configuration
 @EnableWebSocketMessageBroker
+@Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
 
