@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.smartcontact.scm.Helpers.AppConstants;
 import com.smartcontact.scm.Helpers.Helper;
+import com.smartcontact.scm.Helpers.JwtHelper;
 import com.smartcontact.scm.Helpers.Message;
 import com.smartcontact.scm.Helpers.MessageType;
 import com.smartcontact.scm.entities.Contact;
@@ -35,6 +36,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
+
+
+
 @Controller
 @RequestMapping("user/contact")
 public class ContactController {
@@ -44,6 +48,8 @@ public class ContactController {
     private UserService userService;
     @Autowired
     private ImageService imageService;
+    @Autowired
+    private JwtHelper jwtHelper;
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     // @RequestMapping("/add")
@@ -53,7 +59,7 @@ public class ContactController {
 
     //     return "user/add_Contact";
     // }
-
+    
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public String saveContacts(@Valid @ModelAttribute("contactForm") ContactForm contactForm, BindingResult result,
             Authentication authentication, HttpSession session)// make sure binding result is just after model attribute
@@ -145,6 +151,7 @@ public class ContactController {
         model.addAttribute("contactSearchForm", contactSearchForm);
         logger.info("Search Type: " + searchType);
         logger.info("Query: " + query);
+        
         return "user/search";
     }
     @RequestMapping("/delete/{contactId}")

@@ -118,17 +118,144 @@ public class PageController {
     }
     @GetMapping("/user/chat/requests")
     public String viewMessageRequests(Model model, Authentication authentication) {
-        // 1. Get Logged in User
+        // get logged in user
         String username = Helper.getEmailOfLoggedInUser(authentication);
         User user = userService.getUserByEmail(username);
 
-        // 2. Fetch Unknown Users using the Service method we created earlier
+        // get unknown users
         List<User> unknownUsers = chatService.getUnknownUsers(user.getUserId());
 
-        // 3. Add to Model
+        //add to model 
         model.addAttribute("unknownUsers", unknownUsers);
-
+        //return the view
         return "user/message_requests";
     }
 
 }
+
+
+
+// Browser
+//   └── JSESSIONID cookie
+//         ↓
+// Server (RAM)
+//   └── HttpSession
+//         ├── SPRING_SECURITY_CONTEXT (auth)
+//            └── Authentication
+//         └── "message" (UI flash)
+
+
+// ┌──────────┐
+// │ Browser  │
+// └────┬─────┘
+//      │
+//      │ 1️⃣ POST /login (username + password)
+//      ▼
+// ┌──────────┐
+// │ Server   │
+// │ (Spring  │
+// │ Security)(automatic)│
+// └────┬─────┘
+//      │
+//      │ 2️⃣ Authenticate user
+//      │
+//      │ 3️⃣ Create HttpSession (stored in RAM)
+//      │    ┌─────────────────────────────┐
+//      │    │ HttpSession                  │
+//      │    │ ├─ SPRING_SECURITY_CONTEXT   │
+//      │    │ │   └─ Authentication        │
+//      │    │ │      ├─ UserDetails        │
+//      │    │ │      ├─ Roles              │
+//      │    │ │      └─ authenticated=true │
+//      │    │ └─ "message" (UI flash)      │
+//      │    └─────────────────────────────┘
+//      │
+//      │ 4️⃣ Generate Session ID
+//      │    JSESSIONID = A1B2C3D4
+//      │
+//      │ 5️⃣ Send HTTP Response
+//      │    Set-Cookie: JSESSIONID=A1B2C3D4; HttpOnly
+//      ▼
+// ┌──────────┐
+// │ Browser does the job of creating cookies and sending automatically  │
+// └────┬─────┘
+//      │
+//      │ 6️⃣ Store cookie internally
+//      │
+//      │ 7️⃣ Next request (any page / API)
+//      │    Cookie: JSESSIONID=A1B2C3D4
+//      ▼
+// ┌──────────┐
+// │ Server   │
+// │ (Spring) │
+// └────┬─────┘
+//      │
+//      │ 8️⃣ Read cookie
+//      │
+//      │ 9️⃣ Lookup session in RAM
+//      │
+//      │ 🔟 Restore SecurityContext
+//      │
+//      │ 1️⃣1️⃣ Inject Authentication
+//      │        into Controller
+//      ▼
+// ┌───────────────────────────────┐
+// │ @Controller method executes   │
+// │ Authentication authentication │
+// │ is AVAILABLE                  │
+// └───────────────────────────────┘
+
+
+// ┌──────────┐
+// │ Browser / Client │
+// └────┬─────┘
+//      │
+//      │ 1️⃣ User logs in (POST /login with username/password)
+//      ▼
+// ┌──────────┐
+// │ Server   │
+// │ (AuthController)(manual work) │
+// └────┬─────┘
+//      │
+//      │ 2️⃣ Authenticate user
+//      │
+//      │ 3️⃣ Generate JWT (signed token)
+//      │    {
+//      │      sub: "john",
+//      │      role: "USER",
+//      │      exp: 1712345678
+//      │    }
+//      │
+//      │ 4️⃣ Send JWT in response body
+//      │    { "token": "<JWT_STRING>" }
+//      ▼
+// ┌──────────┐
+// │ Browser / Client storage and header addition is manual │
+// └────┬─────┘
+//      │
+//      │ 5️⃣ Store JWT in client
+//      │    - localStorage
+//      │    - sessionStorage
+//      │    - memory (not HttpOnly)
+//      │
+//      │ 6️⃣ For every request / WebSocket connection
+//      │    Add header:
+//      │    Authorization: Bearer <JWT_STRING>
+//      ▼
+// ┌──────────┐
+// │ Server   │
+// │ (Filter / Interceptor) │
+// └────┬─────┘
+//      │
+//      │ 7️⃣ Extract JWT from Authorization header
+//      │
+//      │ 8️⃣ Validate signature & expiration
+//      │
+//      │ 9️⃣ Parse token → Authentication object
+//      │
+//      │ 🔟 Set SecurityContext / attach to request
+//      ▼
+// ┌───────────────────────────────┐
+// │ Controller / WebSocket handler│
+// │ Authentication is AVAILABLE   │
+// └───────────────────────────────┘

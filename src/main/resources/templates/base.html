@@ -19,6 +19,7 @@
         <div th:replace="~{user/user_navbar::usernavbar}"></div>
 
         <input type="hidden" id="loggedInUserId" th:value="${loginUser.userId}" />
+        <input type="hidden" id="userJwt" th:value="${jwtToken}" />
     </div>
 
     <!-- if user is not logged in show normal navbar -->
@@ -34,9 +35,10 @@
     <script th:src="@{'/js/script.js'}"></script>
     <th:block th:replace="${script}"></th:block>
     <div th:replace="~{chat_modal :: #chatModal}"></div>
-    <script src="/js/chat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="/js/chat.js"></script>
+   
 
 </body>
 

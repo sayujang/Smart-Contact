@@ -41,16 +41,16 @@ public class ChatController {
     //sending messages
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessage message) {
-        // Save to Database
+        // save to Database
         ChatMessage savedMessage = chatService.saveMessage(message);
 
-        // 1. Send to receiver
+        // send to receiver
         messagingTemplate.convertAndSend(
             "/queue/messages/" + message.getReceiverId(), 
             savedMessage
         );
 
-        // 2. Send to sender (so it shows up on their screen immediately)
+        // send to sender (so it shows up on their screen immediately)
         messagingTemplate.convertAndSend(
             "/queue/messages/" + message.getSenderId(), 
             savedMessage
@@ -75,24 +75,24 @@ public class ChatController {
     public void addUser(@Payload Map<String, String> payload) {
         String userId = payload.get("userId");
         
-        // A. Update the Real DB Status (Using your existing Service)
-        // You might need to pass a session ID, or just dummy text if not tracking sessions strictly
+        //make the user online and add a dummy session
         chatService.updateUserStatus(userId, UserStatus.Status.ONLINE, "websocket-session");
 
-        // B. Secure Notification Loop
+        //get user by id
         User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("user not found"));
         
-        // Find everyone who has saved ME
+        //return list of contacts which has my email
         List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
 
         for (Contact contactEntry : peopleWhoHaveAddedMe) {
+            //gets the user that my contact belongs to 
             User friend = contactEntry.getUser(); 
             
-            // CHECK: Do I also have them? (Mutual Friend)
+           //check if i also have them as a contact
             boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
 
             if (isMutual) {
-                // Send "ONLINE" update ONLY to this specific friend's private queue
+                //send online update only to this specific friend's private queue
                 Map<String, String> update = Map.of("userId", userId, "status", "ONLINE");
                 messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
             }
@@ -103,10 +103,10 @@ public class ChatController {
     public void disconnectUser(@Payload Map<String, String> payload) {
         String userId = payload.get("userId");
         
-        // A. Update DB Status
+        //first update db
         chatService.updateUserStatus(userId, UserStatus.Status.OFFLINE, null);
 
-        // B. Secure Notification Loop
+        //get my userid and the contacts which has my email
         User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("no user found"));
         List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
 
@@ -115,7 +115,7 @@ public class ChatController {
             boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
 
             if (isMutual) {
-                // Send "OFFLINE" to friend's private queue
+               //send offline message to private queue of my friend
                 Map<String, String> update = Map.of("userId", userId, "status", "OFFLINE");
                 messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
             }

@@ -14,14 +14,25 @@ function connectWebSocket(userId) {
     //If userId is missing/null, do nothing.
     if (!userId) return;
 
+    //retrive token from hidden inputs we added to base.html
+    const tokenInput = document.getElementById("userJwt");
+    const token = tokenInput ? tokenInput.value : null;
+    if (!token) {
+        console.error("❌ Fatal Error: JWT Token not found in HTML. Cannot connect securely.");
+        return; 
+    }
     currentLoggedInUserId = userId;
     const socket = new SockJS('/ws'); //create  a socket
     stompClient = Stomp.over(socket); //wrap around stomp protocol
     stompClient.debug = null; // Hide logs to keep browser console clean
 
+    //pass the token in header
+    const headers = {
+        'Authorization': 'Bearer ' + token
+    };
 
     //sends a stomp connect frame;
-    stompClient.connect({}, function(frame) {
+    stompClient.connect(headers, function(frame) {
         console.log('Connected to WebSocket as ' + userId);
 
         //matches my backend logic messagingTemplate.convertAndSend("/queue/messages/" + receiverId, ...)

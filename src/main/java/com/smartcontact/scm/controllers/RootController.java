@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 import com.smartcontact.scm.Helpers.Helper;
+import com.smartcontact.scm.Helpers.JwtHelper;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.services.UserService;
 //makes the class global to all the controllers
@@ -16,19 +17,23 @@ import com.smartcontact.scm.services.UserService;
 public class RootController {
     @Autowired
     UserService userService;
+    @Autowired
+    private JwtHelper jwtHelper;
     Logger logger=LoggerFactory.getLogger(RootController.class);
     @ModelAttribute//runs before every controller method so that model attribute is available globally
-    public void addLoggedInUserInfo(Model m,Authentication authentication) {
-        if(authentication==null)
-        {
-             m.addAttribute("loginUser", null);
-            return;
+    public void addGlobalAttributes(Model model, Authentication authentication) {
+        if (authentication != null) {
+            String email = Helper.getEmailOfLoggedInUser(authentication);
+            User user = userService.getUserByEmail(email);
+            
+            if (user != null) {
+                // 1. Add User (so loggedInUserId works everywhere)
+                model.addAttribute("loginUser", user);
+
+                // 2. Add Token (so userJwt works everywhere)
+                String token = jwtHelper.generateToken(user.getEmail());
+                model.addAttribute("jwtToken", token);
+            }
         }
-       String username=Helper.getEmailOfLoggedInUser(authentication);//this is an email
-        System.out.println("Logged in user: "+username);
-        User user=userService.getUserByEmail(username);//if no email returns null thus we can do conditional rendering in base.html in navbar and also in dashboard and profile pages for sidebar
-        
-        logger.info(user.getName());
-        m.addAttribute("loginUser", user);
     }
 }  
