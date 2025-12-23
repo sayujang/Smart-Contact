@@ -92,8 +92,10 @@ public class userServiceImpl implements UserService {
     }
     @Override
     public User getUserByEmail(String email) {
-        User user=userRepo.findByEmail(email).orElse(null);
-        return user;
+        return userRepo.findByEmail(email).orElse(null);
     }
-    
+    @Override
+    public User getUserByToken(String token) {
+        return userRepo.findByEmailToken(token).orElse(null);
+    }
 }

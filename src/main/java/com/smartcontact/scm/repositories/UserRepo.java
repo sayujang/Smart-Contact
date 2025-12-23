@@ -9,4 +9,5 @@ import com.smartcontact.scm.entities.User;
 public interface UserRepo extends JpaRepository<User,String> {
 
     Optional<User> findByEmail(String email);
+    Optional<User> findByEmailToken(String emailToken);
 }

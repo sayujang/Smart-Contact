@@ -56,6 +56,7 @@ public class User implements UserDetails{
     @Enumerated(value = EnumType.STRING)//tells jpa how to save enums in database
     private Providers provider=Providers.SELF;
     private String providerUserId;
+    private String emailToken;
 
     //Mapping relation between contact table
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch=FetchType.LAZY,orphanRemoval = true)//here orphan removal= true makes it possible to remove a row from contact table in the database as well(not only in in-memory) when user deletes one of his contacts casdetypeall means if one user(parent) is deleted/saved all his contacts are deleted/saved

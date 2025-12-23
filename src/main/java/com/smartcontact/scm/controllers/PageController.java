@@ -1,6 +1,7 @@
 package com.smartcontact.scm.controllers;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import com.smartcontact.scm.Helpers.MessageType;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.forms.UserForm;
 import com.smartcontact.scm.services.ChatService;
+import com.smartcontact.scm.services.EmailService;
 import com.smartcontact.scm.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -36,6 +38,8 @@ public class PageController {
     }
     @Autowired
     private ChatService chatService;
+    @Autowired
+    private EmailService emailService;
     @GetMapping("/")
     public String index() {
         return "redirect:/home";
@@ -101,6 +105,11 @@ public class PageController {
             session.setAttribute("message", message);  
             return "register";
         }
+        if (userService.isUserExistByEmail(userForm.getEmail())){
+            session.setAttribute("message", Message.builder().content("Email already registered! Try logging in.").type(MessageType.red).build());
+            return "register";
+        }
+        
         //save to database
         User user=new User();
         user.setName(userForm.getName());
@@ -108,13 +117,59 @@ public class PageController {
         user.setPassword(userForm.getPassword());
         user.setAbout(userForm.getAbout());
         user.setPhoneNumber(userForm.getPhoneNumber());
+
+
+        user.setEnabled(false); 
+        user.setEmailVerified(false);
+
+        String token = UUID.randomUUID().toString();
+        user.setEmailToken(token);
+
         User savedUser=userService.saveUser(user);
         System.out.println("users saved");
-        Message message=Message.builder().content("Registration Successful").type(MessageType.green).build();
+        String link = "http://localhost:8080/auth/verify-email?token=" + token; 
+        String body = "Hello " + user.getName() + ",\n\n"
+                    + "Please click the link below to verify your account:\n" + link;
+        emailService.sendEmail(user.getEmail(), "SCM Account Verification", body);
+        System.out.println("Verification mail sent");
+        Message message=Message.builder().content("Registration Successful! Check you email to verify.").type(MessageType.green).build();
         session.setAttribute("message", message);
 
 
         return "redirect:/register";
+    }
+    @GetMapping("/auth/verify-email")
+    public String verifyEmail(@RequestParam("token") String token, HttpSession session) {
+        
+        User user = userService.getUserByToken(token);
+
+        if (user != null) {
+            if (user.isEmailVerified()) {
+                session.setAttribute("message", Message.builder()
+                    .content("Email is already verified. Login now.")
+                    .type(MessageType.blue).build());
+                return "redirect:/login";
+            }
+
+            // Verify the user
+            user.setEnabled(true);
+            user.setEmailVerified(true);
+            user.setEmailToken(null); // Clear token (security best practice)
+            
+            userService.updateUser(user);
+
+            session.setAttribute("message", Message.builder()
+                .content("Email Verified Successfully! You can now login.")
+                .type(MessageType.green).build());
+            
+            return "redirect:/login";
+            
+        } else {
+            session.setAttribute("message", Message.builder()
+                .content("Invalid or Expired Verification Link.")
+                .type(MessageType.red).build());
+            return "redirect:/register";
+        }
     }
     @GetMapping("/user/chat/requests")
     public String viewMessageRequests(Model model, Authentication authentication) {

@@ -50,7 +50,7 @@ public class SecurityConfig {
             
             // User pages - authenticated
             authorize.requestMatchers("/user/**").authenticated();
-            
+            authorize.requestMatchers("/auth/**", "/do-register", "/register").permitAll();
             // Everything else - permit all
             authorize.anyRequest().permitAll();
         });
