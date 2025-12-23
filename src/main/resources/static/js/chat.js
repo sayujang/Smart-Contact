@@ -1,78 +1,86 @@
 let stompClient = null;
-let currentChatUserId = null; //the user the loggedin user is chatting to 
+let currentChatUserId = null; 
 let currentChatUserName = null;
-let currentLoggedInUserId = null; 
-let typingTimeout = null; // Used for UI debounce
+let currentLoggedInUserId = null;
+let typingTimeout = null; 
 
-//websocket connection:
+// --- WEBSOCKET CONNECTION ---
 function connectWebSocket(userId) {
-    // Prevent double connections
     if (stompClient !== null && stompClient.connected) {
         return;
     }
 
-    //If userId is missing/null, do nothing.
     if (!userId) return;
 
-    //retrive token from hidden inputs we added to base.html
     const tokenInput = document.getElementById("userJwt");
     const token = tokenInput ? tokenInput.value : null;
     if (!token) {
-        console.error("❌ Fatal Error: JWT Token not found in HTML. Cannot connect securely.");
-        return; 
+        console.error("❌ Fatal Error: JWT Token not found.");
+        return;
     }
     currentLoggedInUserId = userId;
-    const socket = new SockJS('/ws'); //create  a socket
-    stompClient = Stomp.over(socket); //wrap around stomp protocol
-    stompClient.debug = null; // Hide logs to keep browser console clean
+    const socket = new SockJS('/ws'); 
+    stompClient = Stomp.over(socket); 
+    stompClient.debug = null; 
 
-    //pass the token in header
     const headers = {
         'Authorization': 'Bearer ' + token
     };
 
-    //sends a stomp connect frame;
-    stompClient.connect(headers, function(frame) {
+    stompClient.connect(headers, function (frame) {
         console.log('Connected to WebSocket as ' + userId);
 
-        //matches my backend logic messagingTemplate.convertAndSend("/queue/messages/" + receiverId, ...)
-        stompClient.subscribe('/queue/messages/' + userId, function(message) {
+        // 1. Subscribe to Messages
+        stompClient.subscribe('/queue/messages/' + userId, function (message) {
             const chatMessage = JSON.parse(message.body);
-            
-            //check for modal existence
+
+            // FIX 1: This logic MUST be inside the subscription callback
+            if (chatMessage.senderId === currentLoggedInUserId) {
+                // Find and remove pending messages (Optimistic UI cleanup)
+                const pendingMsgs = document.querySelectorAll('[id^="temp-"]');
+                if (pendingMsgs.length > 0) {
+                    pendingMsgs[pendingMsgs.length - 1].remove(); 
+                }
+            }
+
             const modal = document.getElementById('chatModal');
             if (modal && !modal.classList.contains('hidden')) {
                 displayMessage(chatMessage);
-            } else {
-                console.log("New message received in background");
             }
         });
 
-        //subscribe to status updates (connected to addUser method in chat controller)
-        stompClient.subscribe('/queue/status/' + userId, function(message) { 
+        // 2. Subscribe to Read Receipts
+        stompClient.subscribe('/queue/read/' + userId, function (message) {
+            const data = JSON.parse(message.body);
+            if (currentChatUserId && data.receiverId === currentChatUserId) {
+                markAllMessagesAsSeenUI(); 
+            }
+        });
+
+        // 3. Subscribe to Status Updates
+        stompClient.subscribe('/queue/status/' + userId, function (message) {
             const payload = JSON.parse(message.body);
             updateUserStatus(payload.userId, payload.status);
         });
 
-        //subscribe to typing indicators (connected to handleTyping function in chat controller)
-        stompClient.subscribe('/queue/typing/' + userId, function(message) {
-             const data = JSON.parse(message.body);
-             // Only show if we are currently looking at the user who is typing
-             if (currentChatUserId && data.senderId === currentChatUserId) {
-                 showTypingAnimation();
-             }
+        // 4. Subscribe to Typing
+        stompClient.subscribe('/queue/typing/' + userId, function (message) {
+            const data = JSON.parse(message.body);
+            if (currentChatUserId && data.senderId === currentChatUserId) {
+                showTypingAnimation();
+            }
         });
 
-        //notify Server we are Online (connected to addUser method in chat controller)
+        // Notify Server we are Online
         stompClient.send("/app/chat.connect", {}, JSON.stringify({ userId: userId }));
 
-    }, function(error) {
+    }, function (error) {
         console.log('Chat connection failed (silent fail)');
     });
 }
 
 function disconnectWebSocket() {
-    if (stompClient !== null) { //check if connection exists
+    if (stompClient !== null) { 
         stompClient.send("/app/chat.disconnect", {}, JSON.stringify({
             userId: currentLoggedInUserId
         }));
@@ -81,80 +89,67 @@ function disconnectWebSocket() {
     console.log("Disconnected");
 }
 
-//only async function can have await statements
-async function openChatModal(contactEmail, contactName, contactId,isUnknown = false) {
+// --- MODAL & UI LOGIC ---
+
+async function openChatModal(contactEmail, contactName, contactId, isUnknown = false) {
     console.log('=== OPENING CHAT MODAL ===');
-    
+
     const addBtn = document.getElementById('btnAddUnknown');
     if (addBtn) {
         if (isUnknown) {
-            // If chatting with a stranger (Message Request), SHOW the button
             addBtn.classList.remove('hidden');
-            // Set the link so clicking it adds them as a contact
             addBtn.href = `/user/contact/add?name=${encodeURIComponent(contactName)}&email=${encodeURIComponent(contactEmail)}`;
         } else {
-            // If chatting with a saved contact, HIDE the button
             addBtn.classList.add('hidden');
         }
     }
-    // Get logged-in user ID if not set
+    
     if (!currentLoggedInUserId) {
         const userIdElement = document.getElementById('loggedInUserId');
         if (userIdElement && userIdElement.value) {
             currentLoggedInUserId = userIdElement.value;
         } else {
-            alert('Error: User session not found. Please refresh the page.');
             return;
         }
     }
-    
-    // Check if contact is a registered user
+
     try {
         const url = `/api/contact/is-user/${encodeURIComponent(contactEmail)}`;
-        const response = await fetch(url); //fetch always returns a promise. a promise object can have be resolved(success) or rejected(failure)
+        const response = await fetch(url); 
         const data = await response.json();
-        
+
         if (!data.isUser) {
-            alert('This contact is not a registered user. Cannot start chat.\n\nEmail: ' + contactEmail);
+            alert('This contact is not a registered user.');
             return;
         }
-        
+
         currentChatUserId = data.userId;
         currentChatUserName = data.name;
-        
+
         // Ensure WebSocket is connected
         if (!stompClient || !stompClient.connected) {
             connectWebSocket(currentLoggedInUserId);
-            await new Promise(resolve => setTimeout(resolve, 1000)); //waits for 1s as websocket connection can take time
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
         }
-        
-        // Update modal header
+
+        // UI Updates
         document.getElementById('chatUserName').textContent = data.name;
         document.getElementById('chatUserAvatar').src = data.profilePic || '/images/user.png';
-        
-        
-        // Hide typing indicator initially
         const typingInd = document.getElementById('headerTypingIndicator');
-        if(typingInd) typingInd.classList.add('hidden');
-
-        // Clear previous messages may be with another user
+        if (typingInd) typingInd.classList.add('hidden');
         document.getElementById('chatMessages').innerHTML = '';
-        
-        // Load chat history before model opens up
+
+        // Load Data
         await loadChatHistory(currentLoggedInUserId, currentChatUserId);
-        
-        // Check user status immediately before model opens up
+        sendReadReceipt(currentChatUserId); // Mark history as read
         await checkUserStatus(currentChatUserId);
-        
-        // Show modal
+
         const modal = document.getElementById('chatModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
-        // Focus on input
         document.getElementById('messageInput').focus();
-        
-    } catch (error) { //the failed promise is catched here
+
+    } catch (error) { 
         console.error('Error opening chat:', error);
     }
 }
@@ -166,82 +161,210 @@ function closeChatModal() {
     currentChatUserName = null;
 }
 
+// --- MESSAGE SENDING & DISPLAY ---
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    
+    if (!content) return; 
+    
+    const tempId = "temp-" + Date.now();
+    
+    // Create temp message object
+    const tempMessage = {
+        senderId: currentLoggedInUserId,
+        receiverId: currentChatUserId,
+        content: content,
+        type: 'TEXT',
+        timestamp: new Date().toISOString(),
+        status: 'PENDING' 
+    };
+
+    // Render immediately (Optimistic UI)
+    displayMessage(tempMessage, true, tempId);
+    
+    input.value = '';
+
+    if (stompClient && stompClient.connected) {
+        try {
+            const chatMessage = {
+                senderId: currentLoggedInUserId,
+                receiverId: currentChatUserId,
+                content: content,
+                type: 'TEXT',
+                timestamp: new Date().toISOString()
+            };
+            
+            stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+        } catch (error) {
+            console.error("Send failed", error);
+            markMessageAsFailed(tempId);
+        }
+    } else {
+        console.error("No connection");
+        markMessageAsFailed(tempId);
+    }
+}
+
+// FIX 2: Added tempId as the third argument here
+function displayMessage(message, animate = true, tempId = null) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const isSender = message.senderId === currentLoggedInUserId;
+    
+    // If tempId is provided use it, otherwise use message ID from DB
+    // Note: message.id might be null for temp messages, that's fine
+    const messageElementId = tempId || `msg-${message.id}`;
+    
+    let statusIcon = '';
+    
+    if (isSender) {
+        if (message.status === 'PENDING') {
+            statusIcon = `<i class="fa-regular fa-clock text-[10px] text-gray-400" title="Sending..."></i>`;
+        } else if (message.status === 'FAILED') {
+            statusIcon = `<i class="fa-solid fa-circle-exclamation text-[10px] text-red-500 cursor-pointer" title="Failed to send. Click to retry."></i>`;
+        } else {
+            const isSeen = message.status === 'SEEN';
+            const tickColor = isSeen ? 'text-blue-500' : 'text-gray-400';
+            statusIcon = `<i class="fa-solid fa-check-double text-[10px] ${tickColor} message-tick-icon"></i>`;
+        }
+    }
+
+    const messageDiv = document.createElement('div');
+    if (tempId) messageDiv.id = tempId;
+    
+    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
+
+    const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit'
+    });
+
+    const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
+    const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white rounded-t-lg rounded-br-lg";
+
+    // --- CONTENT RENDERING ---
+    let contentHtml = '';
+    const rawContent = message.content || "";
+
+    if (rawContent.startsWith("IMG:")) {
+        const url = rawContent.substring(4);
+        contentHtml = `
+            <img src="${url}" 
+                 class="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition" 
+                 onclick="window.open(this.src, '_blank')">`;
+    } else if (rawContent.startsWith("FILE:")) {
+        const parts = rawContent.substring(5).split("|");
+        const url = parts[0];
+        const fileName = parts.length > 1 ? parts[1] : "Download File";
+
+        contentHtml = `
+            <a href="${url}" target="_blank" class="flex items-center space-x-3 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition group">
+                <div class="bg-gray-100 dark:bg-gray-600 p-2 rounded text-gray-600 dark:text-gray-200">
+                    <i class="fa-solid fa-file w-6 h-6"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate underline group-hover:no-underline">${escapeHtml(fileName)}</p>
+                    <p class="text-xs opacity-70">Click to download</p>
+                </div>
+            </a>`;
+    } else {
+        contentHtml = `<p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(rawContent)}</p>`;
+    }
+
+    
+    messageDiv.innerHTML = `
+        <div class="max-w-[80%] lg:max-w-[70%]">
+            <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
+                ${contentHtml}
+            </div>
+            <div class="flex items-center justify-${isSender ? 'end' : 'start'} mt-1 space-x-1">
+                <p class="text-[10px] text-gray-500 dark:text-white">${time}</p>
+                <span class="ml-1 message-status-icon">
+                    ${statusIcon}
+                </span>
+            </div>
+        </div>
+    `;
+
+    messagesDiv.appendChild(messageDiv);
+    scrollToBottom();
+    
+    // Read Receipt Logic for Receiver
+    if (!isSender && currentChatUserId === message.senderId) {
+        sendReadReceipt(message.senderId);
+    }
+}
+
+function handleMessageKeyPress(event) {
+    if (event.key === 'Enter') sendMessage();
+}
+
+function markMessageAsFailed(tempId) {
+    const msgDiv = document.getElementById(tempId);
+    if (msgDiv) {
+        const iconSpan = msgDiv.querySelector('.message-status-icon');
+        if (iconSpan) {
+            iconSpan.innerHTML = `<i class="fa-solid fa-circle-exclamation text-[10px] text-red-500" title="Network Error"></i>`;
+        }
+    }
+}
+
+// --- HELPER FUNCTIONS ---
+
+function sendReadReceipt(senderId) {
+    if (!stompClient || !stompClient.connected) return;
+    
+    stompClient.send("/app/chat.read", {}, JSON.stringify({
+        senderId: senderId, 
+        receiverId: currentLoggedInUserId 
+    }));
+}
+
+function markAllMessagesAsSeenUI() {
+    const ticks = document.querySelectorAll('.message-tick-icon');
+    ticks.forEach(tick => {
+        tick.classList.remove('text-gray-400');
+        tick.classList.remove('fa-check'); // in case it was single tick
+        tick.classList.add('text-blue-500');
+    });
+}
+
 async function loadChatHistory(userId1, userId2) {
     try {
         const response = await fetch(`/api/chat/history/${userId1}/${userId2}`);
         const messages = await response.json();
         messages.forEach(message => displayMessage(message, false));
-        scrollToBottom(); //view recent messages
-    } catch (error) { //catch the failed promise so that it doesn't crash
+        scrollToBottom(); 
+    } catch (error) { 
         console.error('Error loading chat history:', error);
     }
 }
 
-function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const content = input.value.trim(); //removes spaces 
-    
-    if (!content || !stompClient || !stompClient.connected) return; //both stomp client and the websocket connections need to exists
-    
-    const chatMessage = {
-        senderId: currentLoggedInUserId,
-        receiverId: currentChatUserId,
-        content: content,
-        type: 'TEXT',
-        timestamp: new Date().toISOString()
-    };
-    
-    try {
-        //send message to sendMessage function in backend
-        stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage)); //websockets can only transport strings
-        input.value = '';
-    } catch (error) {
-        console.error('Error sending message:', error);
-    }
-}
-
-
-
-// Handle Enter key press
-function handleMessageKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-}
-
-//Send Typing Signal
 function handleTyping() {
     if (!stompClient || !currentChatUserId) return;
-    
-    // We just send the signal, we don't need complex timeout logic on the SENDER side
     stompClient.send("/app/chat.typing", {}, JSON.stringify({
-        senderId: currentLoggedInUserId, 
+        senderId: currentLoggedInUserId,
         receiverId: currentChatUserId
     }));
 }
 
-// Receive Typing Signal & Toggle UI
 function showTypingAnimation() {
-    const indicator = document.getElementById('headerTypingIndicator'); // The header text
-    const statusText = document.getElementById('chatUserStatus');       // The 'offline/online' text
-    
+    const indicator = document.getElementById('headerTypingIndicator'); 
+    const statusText = document.getElementById('chatUserStatus');       
+
     if (indicator) {
         indicator.classList.remove('hidden');
-        if(statusText) statusText.classList.add('hidden'); // Hide status while typing
+        if (statusText) statusText.classList.add('hidden'); 
 
-        // Reset the timeout
         if (typingTimeout) clearTimeout(typingTimeout);
 
-        // Hide "typing..." after 2.5 seconds of silence
         typingTimeout = setTimeout(() => {
             indicator.classList.add('hidden');
-            if(statusText) statusText.classList.remove('hidden');
+            if (statusText) statusText.classList.remove('hidden');
         }, 2500);
     }
 }
 
-
-// Fetch single user status (used when opening modal)
 async function checkUserStatus(userId) {
     try {
         const response = await fetch(`/api/chat/status/${userId}`);
@@ -252,39 +375,32 @@ async function checkUserStatus(userId) {
     }
 }
 
-//This function updates both the List Dot AND the Modal Text
 function updateUserStatus(userId, status) {
-    console.log(`Processing update -> User: ${userId}, Status: ${status}`);
-
-    // 1. Find the Dot by the ID defined in your HTML
     const dotId = `status-dot-${userId}`;
     const statusDot = document.getElementById(dotId);
 
     if (statusDot) {
-        // Remove BOTH color classes to be safe
-        statusDot.classList.remove('bg-gray-400'); 
+        statusDot.classList.remove('bg-gray-400');
         statusDot.classList.remove('bg-green-500');
 
-        // Clean the status string (trim whitespace/quotes just in case)
         const cleanStatus = String(status).trim().toUpperCase();
 
         if (cleanStatus === 'ONLINE') {
-            statusDot.classList.add('bg-green-500'); // Turn Green
+            statusDot.classList.add('bg-green-500'); 
             statusDot.title = "Online";
         } else {
-            statusDot.classList.add('bg-gray-400'); // Turn Gray
+            statusDot.classList.add('bg-gray-400'); 
             statusDot.title = "Offline";
         }
     }
 
-    // 2. Update Modal Text (if open)
     if (currentChatUserId && userId == currentChatUserId) {
         const statusText = document.getElementById('chatUserStatus');
         if (statusText) {
             const cleanStatus = String(status).trim().toUpperCase();
             if (cleanStatus === 'ONLINE') {
                 statusText.textContent = 'online';
-                statusText.className = 'text-xs text-green-100 font-bold'; // Kept your green-100 style
+                statusText.className = 'text-xs text-green-100 font-bold'; 
             } else {
                 statusText.textContent = 'offline';
                 statusText.className = 'text-xs text-green-100 font-bold';
@@ -295,50 +411,41 @@ function updateUserStatus(userId, status) {
 
 function scrollToBottom() {
     const messagesDiv = document.getElementById('chatMessages');
-    if(messagesDiv) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    if (messagesDiv) messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 function escapeHtml(text) {
-    if(!text) return "";
+    if (!text) return "";
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+// --- INITIALIZATION ---
+
+document.addEventListener('DOMContentLoaded', function () {
     console.log('=== Chat System Initializing ===');
-    
-    // Connect WebSocket
+
     const userIdElement = document.getElementById('loggedInUserId');
     if (userIdElement && userIdElement.value) {
         currentLoggedInUserId = userIdElement.value;
         connectWebSocket(currentLoggedInUserId);
     }
 
-    // 2. Map Contact Emails to User IDs and Check Status
     const dots = document.querySelectorAll('.user-status-dot');
-    console.log(`Found ${dots.length} contacts. Resolving User IDs...`);
-
     dots.forEach(dot => {
         const email = dot.getAttribute('data-email');
         if (email) {
-            // API Call: Get User ID from Email
             fetch(`/api/contact/is-user/${encodeURIComponent(email)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.isUser && data.userId) {
-                        // CRITICAL: Assign the correct User ID to the DOM element
-                        // Now the WebSocket updates will match this ID!
                         dot.id = `status-dot-${data.userId}`;
-                        
-                        // Check initial status
                         return fetch(`/api/chat/status/${data.userId}`);
-                    } else {
-                        throw new Error("Not a registered user");
                     }
                 })
                 .then(response => {
-                     // Check if response is JSON or Text
+                     if (!response) return;
                      const contentType = response.headers.get("content-type");
                      if (contentType && contentType.includes("application/json")) {
                          return response.json().then(d => d.status);
@@ -347,30 +454,29 @@ document.addEventListener('DOMContentLoaded', function() {
                      }
                 })
                 .then(status => {
-                    // Extract ID back from the dot we just modified
-                    const userId = dot.id.replace('status-dot-', '');
-                    updateUserStatus(userId, status);
+                    if(status && dot.id) {
+                        const userId = dot.id.replace('status-dot-', '');
+                        updateUserStatus(userId, status);
+                    }
                 })
-                .catch(err => {
-                    // Silent fail is fine (contact might not be a registered user)
-                });
+                .catch(err => {});
         }
     });
 });
 
-// Clean disconnect
-window.addEventListener('beforeunload', function() {
+window.addEventListener('beforeunload', function () {
     disconnectWebSocket();
 });
+
+// File Upload Logic
 async function handleFileUpload(inputElement) {
-    const file = inputElement.files[0]; //files property is always a list for input type=file
+    const file = inputElement.files[0]; 
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file); //matches requestparam in fileuploadcontroller
+    formData.append("file", file); 
 
     try {
-        // 1. Upload to Java Backend
         const response = await fetch('/api/chat/upload', {
             method: 'POST',
             body: formData
@@ -379,31 +485,25 @@ async function handleFileUpload(inputElement) {
         if (response.ok) {
             const data = await response.json();
             const fileUrl = data.url;
-            const fileName = file.name; // Keep original name for display
-            
-            // 2. Determine Message Type
+            const fileName = file.name; 
+
             const isImage = file.type.startsWith('image/');
             let messageContent = "";
 
             if (isImage) {
-                // Format: IMG:URL
                 messageContent = "IMG:" + fileUrl;
             } else {
-                // Format: FILE:URL|OriginalName
                 messageContent = "FILE:" + fileUrl + "|" + fileName;
             }
 
-            // 3. Send via WebSocket
-            sendFileMessage(messageContent); 
+            sendFileMessage(messageContent);
         } else {
             alert("Upload failed!");
         }
     } catch (error) {
         console.error("Error uploading file:", error);
     }
-    
-    // Reset input
-    inputElement.value = ''; 
+    inputElement.value = '';
 }
 
 function sendFileMessage(contentString) {
@@ -412,76 +512,9 @@ function sendFileMessage(contentString) {
     const chatMessage = {
         senderId: currentLoggedInUserId,
         receiverId: currentChatUserId,
-        content: contentString, 
-        type: 'TEXT', // We keep type as TEXT and use the prefix to identify content
+        content: contentString,
+        type: 'TEXT', 
         timestamp: new Date().toISOString()
     };
-    //send to sendmessage function in chatcontroller
     stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
-    
-}
-function displayMessage(message, animate = true) {
-    const messagesDiv = document.getElementById('chatMessages');
-    const isSender = message.senderId === currentLoggedInUserId;
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
-    
-    const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit'
-    });
-    
-    const senderClasses = "bg-green-600 text-white rounded-t-lg rounded-bl-lg";
-    const receiverClasses = "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-100 rounded-t-lg rounded-br-lg";
-    
-    // --- CONTENT RENDERING LOGIC ---
-    let contentHtml = '';
-    const rawContent = message.content || "";
-
-    if (rawContent.startsWith("IMG:")) {
-        // SCENARIO 1: IMAGE
-        const url = rawContent.substring(4);
-        contentHtml = `
-            <img src="${url}" 
-                 class="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition" 
-                 onclick="window.open(this.src, '_blank')">`;
-
-    } else if (rawContent.startsWith("FILE:")) {
-        // SCENARIO 2: GENERIC FILE
-        // expected format: FILE:url|filename
-        const parts = rawContent.substring(5).split("|");
-        const url = parts[0];
-        const fileName = parts.length > 1 ? parts[1] : "Download File";
-
-        // Render a File Card
-        contentHtml = `
-            <a href="${url}" target="_blank" class="flex items-center space-x-3 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition group">
-                <div class="bg-gray-100 dark:bg-gray-600 p-2 rounded text-gray-600 dark:text-gray-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate underline group-hover:no-underline">${escapeHtml(fileName)}</p>
-                    <p class="text-xs opacity-70">Click to download</p>
-                </div>
-            </a>`;
-            
-    } else {
-        // SCENARIO 3: PLAIN TEXT
-        contentHtml = `<p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(rawContent)}</p>`;
-    }
-    // -------------------------------
-
-    messageDiv.innerHTML = `
-        <div class="max-w-[80%] lg:max-w-[70%]">
-            <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
-                ${contentHtml}
-            </div>
-            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ${isSender ? 'text-right' : 'text-left'}">${time}</p>
-        </div>
-    `;
-    
-    messagesDiv.appendChild(messageDiv);
-    scrollToBottom();
 }

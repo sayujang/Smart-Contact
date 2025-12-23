@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{base :: parent(~{::#content},~{::title},~{::script})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{base :: parent(~{::#content},~{::title},~{::script})}"
+    xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <title>Message Requests</title>
 </head>
+
 <body>
-    
+
     <div id="content">
         <div th:replace="~{user/sidebar::sidebar}"></div>
         <div class="sm:pl-64 pt-20">
             <div class="p-6">
-                
+
                 <h1 class="text-2xl font-bold mb-6 dark:text-white">Message Requests</h1>
 
                 <!-- <div class="mb-4">
@@ -21,26 +24,33 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    
-                    <div th:each="u : ${unknownUsers}" class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center">
-                        
-                        <img th:src="@{${u.profilePic}}" 
-                             onerror="this.src='/images/user.png'"
-                             class="w-24 h-24 rounded-full object-cover mb-3 shadow-sm" alt="profile">
-                        
-                        <h5 class="mb-1 text-xl font-medium text-gray-900 dark:text-white" th:text="${u.name}">User Name</h5>
-                        
-                        <span class="text-sm text-gray-500 dark:text-gray-400 mb-4" th:text="${u.email}">user@email.com</span>
-                        
+
+                    <div th:each="u : ${unknownUsers}"
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center">
+
+                        <img th:src="@{${u.profilePic}}" onerror="this.src='/images/user.png'"
+                            class="w-24 h-24 rounded-full object-cover mb-3 shadow-sm" alt="profile">
+
+                        <h5 class="mb-1 text-xl font-medium text-gray-900 dark:text-white" th:text="${u.name}">User Name
+                        </h5>
+
+                        <span class="text-sm text-gray-500 dark:text-gray-400 mb-4"
+                            th:text="${u.email}">user@email.com</span>
+
                         <div class="flex space-x-3 mt-auto w-full">
-                            <button 
-                                th:onclick="openChatModal([[${u.email}]], [[${u.name}]], [[${u.userId}]], true)"
+                            <button th:onclick="openChatModal([[${u.email}]], [[${u.name}]], [[${u.userId}]], true)"
+                                onclick="
+           const email = this.getAttribute('data-email');
+           const name = this.getAttribute('data-name');
+           const id = this.getAttribute('data-id');
+           openChatModal(email, name, id, true);
+        " th:data-email="${u.email}" th:data-name="${u.name}" th:data-id="${u.userId}"
                                 class="flex-1 px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700">
                                 <i class="fa-regular fa-comments mr-1"></i> Chat
                             </button>
-                            
-                            <a th:href="@{'/user/contact/add?name='+${u.name}+'&email='+${u.email}}" 
-                               class="flex-1 px-4 py-2 text-sm font-medium text-center text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-700">
+
+                            <a th:href="@{'/user/contact/add?name='+${u.name}+'&email='+${u.email}}"
+                                class="flex-1 px-4 py-2 text-sm font-medium text-center text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-700">
                                 <i class="fa-solid fa-user-plus mr-1"></i> Add
                             </a>
                         </div>
@@ -49,7 +59,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div th:replace="~{chat_modal :: chat-modal}"></div>
     </div>
 
@@ -57,4 +67,5 @@
         console.log("Message Requests Page Loaded");
     </script>
 </body>
+
 </html>

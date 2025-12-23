@@ -6,6 +6,7 @@ import com.smartcontact.scm.entities.ChatMessage;
 import com.smartcontact.scm.entities.Contact;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
+import com.smartcontact.scm.repositories.ChatMessageRepository;
 import com.smartcontact.scm.repositories.ContactRepo;
 import com.smartcontact.scm.services.ChatService;
 import com.smartcontact.scm.services.UserService;
@@ -33,10 +34,13 @@ public class ChatController {
     private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
-    UserService userService;
+    private UserService userService;
 
     @Autowired
-    ContactRepo contactRepo;
+    private ContactRepo contactRepo;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
     
     //sending messages
     @MessageMapping("/chat.send")
@@ -167,4 +171,22 @@ public class ChatController {
         // This returns a list of Users who messaged 'userId' but are NOT in 'userId's contacts
         return chatService.getUnknownUsers(userId);
     }
+
+    @MessageMapping("/chat.read")
+public void markMessagesAsRead(@Payload Map<String, String> payload) {
+    String senderId = payload.get("senderId");   
+    String receiverId = payload.get("receiverId"); 
+
+    // 1. Try to Update Database
+    // We capture the result (True = Updated, False = Blocked by Privacy)
+    boolean isUpdated = chatService.markMessagesAsSeen(senderId, receiverId);
+
+    // 2. ONLY notify the Sender if the database was actually updated
+    if (isUpdated) {
+        messagingTemplate.convertAndSend(
+            "/queue/read/" + senderId, 
+            Map.of("receiverId", receiverId, "status", "SEEN")
+        );
+    }
+}
 }

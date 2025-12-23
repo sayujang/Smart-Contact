@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
@@ -26,4 +27,6 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
     
     // Keep these for your unread counts
     long countByReceiverIdAndStatus(String receiverId, ChatMessage.MessageStatus status);
+    
+    
 }

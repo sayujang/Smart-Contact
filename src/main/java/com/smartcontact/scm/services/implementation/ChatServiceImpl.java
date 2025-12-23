@@ -1,6 +1,7 @@
 package com.smartcontact.scm.services.implementation;
 
 import com.smartcontact.scm.entities.ChatMessage;
+import com.smartcontact.scm.entities.ChatMessage.MessageStatus;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
 import com.smartcontact.scm.repositories.ChatMessageRepository;
@@ -9,6 +10,10 @@ import com.smartcontact.scm.repositories.UserRepo;
 import com.smartcontact.scm.repositories.UserStatusRepository;
 import com.smartcontact.scm.services.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,7 +24,8 @@ public class ChatServiceImpl implements ChatService {
     
     @Autowired
     private ChatMessageRepository chatMessageRepository;
-    
+    @Autowired
+    private MongoTemplate mongoTemplate;
     @Autowired
     private UserStatusRepository userStatusRepository;
     @Autowired
@@ -47,14 +53,6 @@ public class ChatServiceImpl implements ChatService {
     public void markMessageAsDelivered(String messageId) {
         chatMessageRepository.findById(messageId).ifPresent(message -> {
             message.setStatus(ChatMessage.MessageStatus.DELIVERED);
-            chatMessageRepository.save(message);
-        });
-    }
-
-    @Override
-    public void markMessageAsRead(String messageId) {
-        chatMessageRepository.findById(messageId).ifPresent(message -> {
-            message.setStatus(ChatMessage.MessageStatus.READ);
             chatMessageRepository.save(message);
         });
     }
@@ -107,4 +105,41 @@ public boolean isUserOnline(String userId) {
                 .filter(sender -> !sender.getUserId().equals(currentUserId)) // Ensure I don't see myself
                 .collect(Collectors.toList());
     }
+
+@Override
+public boolean markMessagesAsSeen(String senderId, String receiverId) { // boolean return type
+
+    User receiver = userRepo.findById(receiverId).orElse(null); // The one reading
+    User sender = userRepo.findById(senderId).orElse(null);     // The one who sent
+
+    if (receiver == null || sender == null) return false;
+
+    // CHECK 1: Does the RECEIVER have the SENDER saved?
+    // (If I don't know you, I don't want you to know I read this)
+    boolean receiverHasSavedSender = contactRepo.findByUserAndEmail(receiver, sender.getEmail()).isPresent();
+
+    // CHECK 2: Does the SENDER have the RECEIVER saved?
+    // (If you don't know me, I shouldn't be sending you status updates)
+    boolean senderHasSavedReceiver = contactRepo.findByUserAndEmail(sender, receiver.getEmail()).isPresent();
+
+    // LOGIC: BOTH must be true for Blue Ticks to appear
+    if (!receiverHasSavedSender || !senderHasSavedReceiver) {
+        System.out.println("Privacy: Blocked Read Receipt. Mutual contact required.");
+        return false; // Return false so Controller doesn't send the update
+    }
+
+    // If both checks pass, update the Database
+    Query query = new Query(
+        Criteria.where("senderId").is(senderId)
+                .and("receiverId").is(receiverId)
+                .and("status").ne(MessageStatus.SEEN)
+    );
+
+    Update update = new Update();
+    update.set("status", MessageStatus.SEEN);
+
+    mongoTemplate.updateMulti(query, update, ChatMessage.class);
+    
+    return true; // Success
+}
 }

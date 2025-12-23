@@ -2,6 +2,9 @@ package com.smartcontact.scm.entities;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.smartcontact.scm.entities.ChatMessage.MessageStatus;
+
 import java.time.LocalDateTime;
 
 @Document(collection = "chat_messages")
@@ -13,7 +16,7 @@ public class ChatMessage {
     private String receiverId;    // User ID who receives the message
     private String content;       // Message text
     private LocalDateTime timestamp;
-    private MessageStatus status; // SENT, DELIVERED, READ
+    private MessageStatus status=MessageStatus.SENT; 
     private MessageType type;     // TEXT, IMAGE, FILE
     
     // Constructors
@@ -89,7 +92,7 @@ public class ChatMessage {
     
     // Enums
     public enum MessageStatus {
-        SENT, DELIVERED, READ
+        SENT, DELIVERED, SEEN
     }
     
     public enum MessageType {

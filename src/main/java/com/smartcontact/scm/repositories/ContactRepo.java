@@ -1,5 +1,6 @@
 package com.smartcontact.scm.repositories;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,5 @@ public interface ContactRepo extends JpaRepository<Contact,String> {
     List<String> findEmailsByUserId(String userId);
     boolean existsByUserAndEmail(User user, String email);
     List<Contact> findByEmail(String email);
+    Optional<Contact> findByUserAndEmail(User user, String email);
 }

@@ -13,7 +13,6 @@ public interface ChatService {
     
     void markMessageAsDelivered(String messageId);
     
-    void markMessageAsRead(String messageId);
     
     long getUnreadMessageCount(String userId);
     
@@ -23,4 +22,5 @@ public interface ChatService {
     
     boolean isUserOnline(String userId);
     List<User> getUnknownUsers(String currentUserId);
+    boolean markMessagesAsSeen(String senderId, String receiverId);
 }
