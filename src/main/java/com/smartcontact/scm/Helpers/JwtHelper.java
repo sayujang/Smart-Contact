@@ -18,7 +18,7 @@ public class JwtHelper {
     // 1. Valid for 5 Hours (milliseconds)
     public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60 * 1000;
 
-    // 2. Secret Key (In production, move this to application.properties!)
+    // 2. Secret Key
     // Must be at least 256 bits (32 chars)
     private final String SECRET = "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
     
@@ -31,7 +31,7 @@ public class JwtHelper {
 
     // --- Retrieve Expiration Date ---
     public Date getExpirationDateFromToken(String token) {
-        return getClaimFromToken(token, Claims::getExpiration);
+        return getClaimFromToken(token, Claims::getExpiration);//claims -> claims.getexpiration
     }
 
     public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
@@ -41,7 +41,11 @@ public class JwtHelper {
 
     // --- Secret Key is needed here to decrypt the token ---
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        return Jwts.parserBuilder() //prepare jwt reader
+        .setSigningKey(key) //use secret key
+        .build()
+        .parseClaimsJws(token)//verify and decode token
+        .getBody();//get body(acutal data)
     }
 
     private Boolean isTokenExpired(String token) {
@@ -57,7 +61,7 @@ public class JwtHelper {
 
     private String doGenerateToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .setClaims(claims)
+                .setClaims(claims)//for custom claims in our case theres none
                 .setSubject(subject) // The "User" this token belongs to
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
@@ -71,3 +75,11 @@ public class JwtHelper {
         return (usernameFromToken.equals(username) && !isTokenExpired(token));
     }
 }
+
+//content of jwt token where each key-value is a default claim
+// {
+//   "sub": "sayuj",
+//   "iat": 1700000000,
+//   "exp": 1700018000,
+//   "role": "ADMIN"
+// }

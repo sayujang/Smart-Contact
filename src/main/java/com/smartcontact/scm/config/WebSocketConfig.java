@@ -26,7 +26,7 @@ import com.smartcontact.scm.services.implementation.SecurityCustomUserDetailServ
 
 @Configuration
 @EnableWebSocketMessageBroker
-@Order(Ordered.HIGHEST_PRECEDENCE + 99)
+@Order(Ordered.HIGHEST_PRECEDENCE + 99) //ensures this config runs early in case there are multiple interceptors
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
 
@@ -47,14 +47,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS(); //incase web browser doesnt support websockets
     }
+    //add a channel interceptor
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
+            //the presend method runs before every message from the client is processed in controllers
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                //extracts stomp header from the incoming message
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-                // Only check security on the initial CONNECT frame
+                //only check security on the initial connect frame
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     
                     List<String> authorization = accessor.getNativeHeader("Authorization");
@@ -85,12 +88,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         } else {
                             // 3. If validation fails, REJECT
                             System.out.println("❌ WebSocket Connection Rejected: Invalid Token Signature");
-                            return null; // <--- THIS BLOCKS THE CONNECTION
+                            return null; //THIS BLOCKS THE CONNECTION
                         }
                     } catch (Exception e) {
                          // 4. If any error occurs (expired, malformed), REJECT
                          System.out.println("❌ WebSocket Connection Rejected: Token Error -> " + e.getMessage());
-                         return null; // <--- THIS BLOCKS THE CONNECTION
+                         return null; //THIS BLOCKS THE CONNECTION
                     }
                 }
 
