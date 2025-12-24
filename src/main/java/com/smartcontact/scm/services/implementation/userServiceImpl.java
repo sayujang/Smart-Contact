@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.smartcontact.scm.Helpers.AppConstants;
 import com.smartcontact.scm.Helpers.ResourceNotFoundException;
 import com.smartcontact.scm.entities.User;
+import com.smartcontact.scm.repositories.ContactRepo;
 import com.smartcontact.scm.repositories.UserRepo;
 import com.smartcontact.scm.services.UserService;
 
@@ -25,24 +26,40 @@ public class userServiceImpl implements UserService {
     @Autowired
     private  UserRepo userRepo;//field injection
     
-
+    @Autowired
+    private ContactRepo contactRepo;
     //constructor injection
     userServiceImpl(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
     }
     @Override
     public User saveUser(User user) {
-        //create random userid before saving
-        String userId=UUID.randomUUID().toString();
+        // Create random userId
+        String userId = UUID.randomUUID().toString();
         user.setUserId(userId);
-        //encrypt the password before saving
+        
+        // Encode password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        //assign role of user
+        
+        // Assign role
         user.setRoleList(List.of(AppConstants.ROLE_USER));
-        //log at info level
-        logger.info(user.getProvider().toString());//in enums tostring method converts enums to strings
-        //save the user
-        return userRepo.save(user);
+        
+        logger.info(user.getProvider().toString());
+        
+        // 3. Save the new User first
+        User savedUser = userRepo.save(user);
+
+        // 4. SYNC: Immediately update any existing contacts that match this email
+        // This fixes the bug: If User B has this email in their contacts, 
+        // it now gets the new Name/Pic/Phone immediately.
+        contactRepo.updateContactDetailsByEmail(
+            savedUser.getName(), 
+            savedUser.getPhoneNumber(), 
+            savedUser.getProfilePic(), 
+            savedUser.getEmail()
+        );
+
+        return savedUser;
     }
  
     @Override

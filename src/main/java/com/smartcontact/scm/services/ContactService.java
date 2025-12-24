@@ -34,4 +34,5 @@ public interface ContactService {
 
     // Add this method signature
     boolean createMutualContact(User loggedInUser, String otherUserEmail);
+    void syncUserChangesToContacts(User user);
 }

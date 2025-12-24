@@ -65,7 +65,7 @@ public class OauthAuthenticationSuccessHandler implements AuthenticationSuccessH
             logger.info("New user saved with email:"+email);
         }
         //sends responds to /user/dashboard if login success
-        response.sendRedirect("/user/dashboard");
+        response.sendRedirect("/user/contact");
         
 }
 }

@@ -59,7 +59,7 @@ public class SecurityConfig {
             form.loginPage("/login");
             form.loginProcessingUrl("/authenticate");
             form.permitAll();
-            form.successForwardUrl("/user/dashboard");
+            form.successForwardUrl("/user/contact");
             form.failureForwardUrl("/login?error=true");
             form.usernameParameter("email");
             form.passwordParameter("password");

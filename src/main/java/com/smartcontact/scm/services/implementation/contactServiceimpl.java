@@ -139,5 +139,15 @@ public boolean createMutualContact(User loggedInUser, String otherUserEmail) {
 
     return dataUpdated; // Returns TRUE if added, FALSE if duplicate
 }
+@Override
+public void syncUserChangesToContacts(User user) {
+    // This executes the single SQL update query we wrote in the Repo
+    contactRepo.updateContactDetailsByEmail(
+        user.getName(), 
+        user.getPhoneNumber(), 
+        user.getProfilePic(), 
+        user.getEmail()
+    );
+}
 }
 
