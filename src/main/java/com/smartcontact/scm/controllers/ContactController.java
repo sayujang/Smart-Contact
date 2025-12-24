@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,14 +31,14 @@ import com.smartcontact.scm.forms.ContactForm;
 import com.smartcontact.scm.forms.ContactSearchForm;
 import com.smartcontact.scm.services.ContactService;
 import com.smartcontact.scm.services.ImageService;
+import com.smartcontact.scm.services.QrCodeService;
 import com.smartcontact.scm.services.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-
-
-
 
 @Controller
 @RequestMapping("user/contact")
@@ -50,16 +51,19 @@ public class ContactController {
     private ImageService imageService;
     @Autowired
     private JwtHelper jwtHelper;
+
+    @Autowired
+    private QrCodeService qrCodeService;
     Logger logger = LoggerFactory.getLogger(this.getClass());
 
     // @RequestMapping("/add")
     // public String addContactView(Model model) {
-    //     ContactForm contactForm = new ContactForm();
-    //     model.addAttribute("contactForm", contactForm);
+    // ContactForm contactForm = new ContactForm();
+    // model.addAttribute("contactForm", contactForm);
 
-    //     return "user/add_Contact";
+    // return "user/add_Contact";
     // }
-    
+
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public String saveContacts(@Valid @ModelAttribute("contactForm") ContactForm contactForm, BindingResult result,
             Authentication authentication, HttpSession session)// make sure binding result is just after model attribute
@@ -109,9 +113,10 @@ public class ContactController {
     }
 
     // uses the endpoint defined in class level request mapping
-    @RequestMapping // get request by default//get methods are essential for pagination  not requestparam or model attribute
+    @RequestMapping // get request by default//get methods are essential for pagination not
+                    // requestparam or model attribute
     public String viewContacts(
-        @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = AppConstants.PAGE_SIZE + "") int size,
             @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
             @RequestParam(value = "direction", defaultValue = "asc") String direction, Model model,
@@ -143,7 +148,8 @@ public class ContactController {
         } else if (contactSearchForm.getSearchType().equalsIgnoreCase("email")) {
             pageContact = contactService.searchByEmail(contactSearchForm.getQuery(), page, size, sortBy, sortBy, user);
         } else if (contactSearchForm.getSearchType().equalsIgnoreCase("phone")) {
-            pageContact = contactService.searchByPhoneNumber(contactSearchForm.getQuery(), page, size, sortBy, sortBy, user);
+            pageContact = contactService.searchByPhoneNumber(contactSearchForm.getQuery(), page, size, sortBy, sortBy,
+                    user);
         }
         logger.info("pagecontact {}", pageContact.getContent());
         model.addAttribute("pageContact", pageContact);
@@ -151,22 +157,22 @@ public class ContactController {
         model.addAttribute("contactSearchForm", contactSearchForm);
         logger.info("Search Type: " + searchType);
         logger.info("Query: " + query);
-        
+
         return "user/search";
     }
+
     @RequestMapping("/delete/{contactId}")
-    public String deleteContact(@PathVariable String contactId, HttpSession session)
-    {
+    public String deleteContact(@PathVariable String contactId, HttpSession session) {
         contactService.delete(contactId);
-         Message message=Message.builder().content("Contact Deleted Successfully!").type(MessageType.green).build();
-            session.setAttribute("message", message);  
+        Message message = Message.builder().content("Contact Deleted Successfully!").type(MessageType.green).build();
+        session.setAttribute("message", message);
         return "redirect:/user/contact";
     }
+
     @RequestMapping("/update_view/{contactId}")
-    public String updateViewContact(@PathVariable String contactId,Model model)
-    {
-        Contact contact=contactService.getById(contactId);
-        ContactForm contactForm=new ContactForm();
+    public String updateViewContact(@PathVariable String contactId, Model model) {
+        Contact contact = contactService.getById(contactId);
+        ContactForm contactForm = new ContactForm();
         contactForm.setName(contact.getName());
         contactForm.setEmail(contact.getEmail());
         contactForm.setAddress(contact.getAddress());
@@ -177,15 +183,15 @@ public class ContactController {
         contactForm.setFavorite(contact.isFavorite());
         contactForm.setPictureUrl(contact.getPicture());
         model.addAttribute("contactForm", contactForm);
-        model.addAttribute("contactId",contactId );
+        model.addAttribute("contactId", contactId);
         return "user/update_view";
     }
-    @RequestMapping("/update/{contactId}")
-    public String updateContact(@PathVariable String contactId,@Valid @ModelAttribute ContactForm contactForm,BindingResult bindingResult,Model model,HttpSession session)
-    {
 
-        if(bindingResult.hasErrors())
-        {
+    @RequestMapping("/update/{contactId}")
+    public String updateContact(@PathVariable String contactId, @Valid @ModelAttribute ContactForm contactForm,
+            BindingResult bindingResult, Model model, HttpSession session) {
+
+        if (bindingResult.hasErrors()) {
             Message message = Message.builder().content("Please correct the shown errors!").type(MessageType.red)
                     .build();
             session.setAttribute("message", message);
@@ -216,26 +222,67 @@ public class ContactController {
         var updateCon = contactService.update(con);
         Message message = Message.builder().content("Contact Updated Succesfully!").type(MessageType.green).build();
         session.setAttribute("message", message);
-        return "redirect:/user/contact/update_view/"+contactId;
-    }
-    // UPDATED addContactView method to handle pre-filling data
-@RequestMapping("/add")
-public String addContactView(
-    Model model, 
-    @RequestParam(value = "name", required = false) String name, 
-    @RequestParam(value = "email", required = false) String email
-) {
-    ContactForm contactForm = new ContactForm();
-    
-    // If name or email came from the link, pre-fill the form
-    if (name != null) {
-        contactForm.setName(name);
-    }
-    if (email != null) {
-        contactForm.setEmail(email);
+        return "redirect:/user/contact/update_view/" + contactId;
     }
 
-    model.addAttribute("contactForm", contactForm);
-    return "user/add_Contact";
+    // UPDATED addContactView method to handle pre-filling data
+    @RequestMapping("/add")
+    public String addContactView(
+            Model model,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "email", required = false) String email) {
+        ContactForm contactForm = new ContactForm();
+
+        // If name or email came from the link, pre-fill the form
+        if (name != null) {
+            contactForm.setName(name);
+        }
+        if (email != null) {
+            contactForm.setEmail(email);
+        }
+
+        model.addAttribute("contactForm", contactForm);
+        return "user/add_Contact";
+    }
+
+    @GetMapping(value = "/qrcode", produces = MediaType.IMAGE_PNG_VALUE)
+    @ResponseBody
+    public byte[] getMyQrCode(Authentication authentication) throws Exception {
+        String username = Helper.getEmailOfLoggedInUser(authentication);
+        // We encode just the email in the QR. It's unique and enough to find the user.
+        return qrCodeService.generateQrCode(username, 300, 300);
+    }
+
+    @PostMapping("/upload-qr")
+public String uploadQrCode(@RequestParam("qrFile") MultipartFile file, 
+                           HttpSession session, 
+                           Authentication authentication) {
+    try {
+        String otherUserEmail = qrCodeService.readQrCode(file);
+        String currentUserEmail = Helper.getEmailOfLoggedInUser(authentication);
+        User currentUser = userService.getUserByEmail(currentUserEmail);
+
+        // Capture the boolean result
+        boolean isNewContact = contactService.createMutualContact(currentUser, otherUserEmail);
+
+        if (isNewContact) {
+            // GREEN MESSAGE: Success
+            Message message = Message.builder()
+                .content("Success! You and " + otherUserEmail + " are now connected.")
+                .type(MessageType.green).build();
+            session.setAttribute("message", message);
+        } else {
+            // AMBER/BLUE MESSAGE: Already Exists
+            Message message = Message.builder()
+                .content("User " + otherUserEmail + " is already in your contacts.")
+                .type(MessageType.blue) // or MessageType.red if you prefer
+                .build();
+            session.setAttribute("message", message);
+        }
+
+    } catch (Exception e) {
+        // ... error handling ...
+    }
+    return "redirect:/user/contact/add";
 }
 }

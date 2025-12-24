@@ -23,9 +23,15 @@ public interface ContactService {
     // delete contact
 
     void delete(String id);
-    
-    Page<Contact> getByUser(User user,int page,int size,String sortBy,String sortDir);
-    Page<Contact> searchByName(String name, int page, int size, String sortBy, String sortDir,User user);
-    Page<Contact> searchByEmail(String email,int page, int size, String sortBy, String sortDir,User user);
-    Page<Contact> searchByPhoneNumber(String phoneNumber,int page, int size, String sortBy, String sortDir,User user);
+
+    Page<Contact> getByUser(User user, int page, int size, String sortBy, String sortDir);
+
+    Page<Contact> searchByName(String name, int page, int size, String sortBy, String sortDir, User user);
+
+    Page<Contact> searchByEmail(String email, int page, int size, String sortBy, String sortDir, User user);
+
+    Page<Contact> searchByPhoneNumber(String phoneNumber, int page, int size, String sortBy, String sortDir, User user);
+
+    // Add this method signature
+    boolean createMutualContact(User loggedInUser, String otherUserEmail);
 }

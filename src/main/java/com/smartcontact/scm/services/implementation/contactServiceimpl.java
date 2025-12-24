@@ -15,12 +15,15 @@ import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.repositories.ContactRepo;
 import com.smartcontact.scm.repositories.UserRepo;
 import com.smartcontact.scm.services.ContactService;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class contactServiceimpl implements ContactService {
 
     @Autowired
-    ContactRepo contactRepo;
-    UserRepo userRepo;
+    private ContactRepo contactRepo;
+    @Autowired
+    private UserRepo userRepo;
     @Override
     public Contact save(Contact contact) {
         String contactId=UUID.randomUUID().toString();
@@ -90,7 +93,51 @@ public class contactServiceimpl implements ContactService {
         return contactRepo.findByPhoneNumberContainingAndUser(phoneNumber,user, pageable);
     }
 
-   
-  
+   // Inject UserRepo and the internal ContactRepo
 
+@Override
+@Transactional
+public boolean createMutualContact(User loggedInUser, String otherUserEmail) {
+    User otherUser = userRepo.findByEmail(otherUserEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (loggedInUser.getEmail().equals(otherUser.getEmail())) {
+        throw new IllegalArgumentException("You cannot add yourself!");
+    }
+
+    boolean dataUpdated = false; // Track if we make any changes
+
+    // CHECK 1: Add OtherUser to LoggedInUser
+    if (!contactRepo.existsByUserAndEmail(loggedInUser, otherUser.getEmail())) {
+        Contact contactForLoggedIn = new Contact();
+        contactForLoggedIn.setId(UUID.randomUUID().toString());
+        contactForLoggedIn.setName(otherUser.getName());
+        contactForLoggedIn.setEmail(otherUser.getEmail());
+        contactForLoggedIn.setPhoneNumber(otherUser.getPhoneNumber());
+        contactForLoggedIn.setPicture(otherUser.getProfilePic());
+        contactForLoggedIn.setDescription("Added via QR Code");
+        contactForLoggedIn.setUser(loggedInUser);
+        contactRepo.save(contactForLoggedIn);
+        
+        dataUpdated = true; // Mark that we did something
+    }
+
+    // CHECK 2: Add LoggedInUser to OtherUser
+    if (!contactRepo.existsByUserAndEmail(otherUser, loggedInUser.getEmail())) {
+        Contact contactForOther = new Contact();
+        contactForOther.setId(UUID.randomUUID().toString());
+        contactForOther.setName(loggedInUser.getName());
+        contactForOther.setEmail(loggedInUser.getEmail());
+        contactForOther.setPhoneNumber(loggedInUser.getPhoneNumber());
+        contactForOther.setPicture(loggedInUser.getProfilePic());
+        contactForOther.setDescription("Added via QR Code");
+        contactForOther.setUser(otherUser);
+        contactRepo.save(contactForOther);
+        
+        dataUpdated = true; // Mark that we did something
+    }
+
+    return dataUpdated; // Returns TRUE if added, FALSE if duplicate
 }
+}
+
