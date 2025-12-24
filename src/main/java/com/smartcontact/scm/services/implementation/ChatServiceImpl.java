@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -141,5 +142,48 @@ public boolean markMessagesAsSeen(String senderId, String receiverId) { // boole
     mongoTemplate.updateMulti(query, update, ChatMessage.class);
     
     return true; // Success
+}
+@Override
+public Map<String, Long> getUnreadCountsSplit(String userId) {
+    // 1. Get all unread messages for this user
+    List<ChatMessage> unreadMessages = chatMessageRepository.findByReceiverIdAndStatus(userId, ChatMessage.MessageStatus.SENT);
+    
+    // 2. Get my saved contacts' emails
+    List<String> myContactEmails = contactRepo.findEmailsByUserId(userId);
+    
+    // 3. Get User details for the senders (to match IDs to Emails)
+    // (We need to know the email of the person who sent the message to check against contact list)
+    List<String> senderIds = unreadMessages.stream().map(ChatMessage::getSenderId).distinct().collect(Collectors.toList());
+    List<User> senders = userRepo.findAllById(senderIds);
+    Map<String, String> senderIdToEmailMap = senders.stream()
+            .collect(Collectors.toMap(User::getUserId, User::getEmail));
+
+    long contactsCount = 0;
+    long requestsCount = 0;
+
+    for (ChatMessage msg : unreadMessages) {
+        String senderEmail = senderIdToEmailMap.get(msg.getSenderId());
+        
+        // If sender's email is in my contacts -> It's a Contact Message
+        if (senderEmail != null && myContactEmails.contains(senderEmail)) {
+            contactsCount++;
+        } 
+        // If not -> It's a Message Request
+        else {
+            requestsCount++;
+        }
+    }
+
+    return Map.of("contactsUnread", contactsCount, "requestsUnread", requestsCount);
+}
+@Override
+public List<String> getSendersWithUnreadMessages(String receiverId) {
+    // Determine senders who have messages with status 'SENT' addressed to this receiver
+    Query query = new Query();
+    query.addCriteria(Criteria.where("receiverId").is(receiverId)
+                      .and("status").is(ChatMessage.MessageStatus.SENT));
+    
+    // distinct query to get unique sender IDs
+    return mongoTemplate.findDistinct(query, "senderId", ChatMessage.class, String.class);
 }
 }

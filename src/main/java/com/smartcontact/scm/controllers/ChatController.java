@@ -41,8 +41,8 @@ public class ChatController {
 
     @Autowired
     private ChatMessageRepository chatMessageRepository;
-    
-    //sending messages
+
+    // sending messages
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessage message) {
         // save to Database
@@ -50,84 +50,79 @@ public class ChatController {
 
         // send to receiver
         messagingTemplate.convertAndSend(
-            "/queue/messages/" + message.getReceiverId(), 
-            savedMessage
-        );
+                "/queue/messages/" + message.getReceiverId(),
+                savedMessage);
 
         // send to sender (so it shows up on their screen immediately)
         messagingTemplate.convertAndSend(
-            "/queue/messages/" + message.getSenderId(), 
-            savedMessage
-        );
+                "/queue/messages/" + message.getSenderId(),
+                savedMessage);
     }
 
-
-    //typing indicators
+    // typing indicators
     @MessageMapping("/chat.typing")
     public void handleTyping(@Payload Map<String, String> payload) {
         String receiverId = payload.get("receiverId");
-        
+
         // Forward typing status directly to the receiver
         messagingTemplate.convertAndSend(
-            "/queue/typing/" + receiverId,
-            payload
-        );
+                "/queue/typing/" + receiverId,
+                payload);
     }
 
     // It handles online status and saves the userId for disconnection events.
     @MessageMapping("/chat.connect")
     public void addUser(@Payload Map<String, String> payload) {
         String userId = payload.get("userId");
-        
-        //make the user online and add a dummy session
+
+        // make the user online and add a dummy session
         chatService.updateUserStatus(userId, UserStatus.Status.ONLINE, "websocket-session");
 
-        //get user by id
-        User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("user not found"));
-        
-        //return list of contacts which has my email
+        // get user by id
+        User me = userService.getUserById(userId).orElseThrow(() -> new ResourceNotFoundException("user not found"));
+
+        // return list of contacts which has my email
         List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
 
         for (Contact contactEntry : peopleWhoHaveAddedMe) {
-            //gets the user that my contact belongs to 
-            User friend = contactEntry.getUser(); 
-            
-           //check if i also have them as a contact
+            // gets the user that my contact belongs to
+            User friend = contactEntry.getUser();
+
+            // check if i also have them as a contact
             boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
 
             if (isMutual) {
-                //send online update only to this specific friend's private queue
+                // send online update only to this specific friend's private queue
                 Map<String, String> update = Map.of("userId", userId, "status", "ONLINE");
                 messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
             }
         }
     }
 
-   @MessageMapping("/chat.disconnect")
+    @MessageMapping("/chat.disconnect")
     public void disconnectUser(@Payload Map<String, String> payload) {
         String userId = payload.get("userId");
-        
-        //first update db
+
+        // first update db
         chatService.updateUserStatus(userId, UserStatus.Status.OFFLINE, null);
 
-        //get my userid and the contacts which has my email
-        User me = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("no user found"));
+        // get my userid and the contacts which has my email
+        User me = userService.getUserById(userId).orElseThrow(() -> new ResourceNotFoundException("no user found"));
         List<Contact> peopleWhoHaveAddedMe = contactRepo.findByEmail(me.getEmail());
 
         for (Contact contactEntry : peopleWhoHaveAddedMe) {
-            User friend = contactEntry.getUser(); 
+            User friend = contactEntry.getUser();
             boolean isMutual = contactRepo.existsByUserAndEmail(me, friend.getEmail());
 
             if (isMutual) {
-               //send offline message to private queue of my friend
+                // send offline message to private queue of my friend
                 Map<String, String> update = Map.of("userId", userId, "status", "OFFLINE");
                 messagingTemplate.convertAndSend("/queue/status/" + friend.getUserId(), update);
             }
         }
     }
 
-
-    //API ENDPOINTS (For loading history via HTTP)
+    // API ENDPOINTS (For loading history via HTTP)
     @GetMapping("/api/chat/history/{userId1}/{userId2}")
     @ResponseBody
     public List<ChatMessage> getChatHistory(@PathVariable String userId1, @PathVariable String userId2) {
@@ -139,7 +134,10 @@ public class ChatController {
     public Map<String, Object> getUserStatus(@PathVariable String userId, Authentication authentication) {
         String myEmail = Helper.getEmailOfLoggedInUser(authentication);
         User me = userService.getUserByEmail(myEmail); // Me
-        User them = userService.getUserById(userId).orElseThrow(()-> new ResourceNotFoundException("user not found"));   // The person I'm checking
+        User them = userService.getUserById(userId).orElseThrow(() -> new ResourceNotFoundException("user not found")); // The
+                                                                                                                        // person
+                                                                                                                        // I'm
+                                                                                                                        // checking
 
         // Mutual Check
         boolean iHaveThem = contactRepo.existsByUserAndEmail(me, them.getEmail());
@@ -155,38 +153,45 @@ public class ChatController {
         // If not mutual, 'isOnline' remains false (OFFLINE)
 
         return Map.of(
-            "userId", userId, 
-            "status", isOnline ? "ONLINE" : "OFFLINE"
-        );
+                "userId", userId,
+                "status", isOnline ? "ONLINE" : "OFFLINE");
     }
-    
+
     @GetMapping("/api/chat/unread/{userId}")
-    @ResponseBody //tells to return a response body instead of a view
+    @ResponseBody
     public Map<String, Long> getUnreadCount(@PathVariable String userId) {
-        return Map.of("unreadCount", chatService.getUnreadMessageCount(userId));
+        // Call the new split method
+        return chatService.getUnreadCountsSplit(userId);
     }
+
     @GetMapping("/api/chat/unknown/{userId}")
     @ResponseBody
     public List<User> getUnknownUsers(@PathVariable String userId) {
-        // This returns a list of Users who messaged 'userId' but are NOT in 'userId's contacts
+        // This returns a list of Users who messaged 'userId' but are NOT in 'userId's
+        // contacts
         return chatService.getUnknownUsers(userId);
     }
 
     @MessageMapping("/chat.read")
-public void markMessagesAsRead(@Payload Map<String, String> payload) {
-    String senderId = payload.get("senderId");   
-    String receiverId = payload.get("receiverId"); 
+    public void markMessagesAsRead(@Payload Map<String, String> payload) {
+        String senderId = payload.get("senderId");
+        String receiverId = payload.get("receiverId");
 
-    // 1. Try to Update Database
-    // We capture the result (True = Updated, False = Blocked by Privacy)
-    boolean isUpdated = chatService.markMessagesAsSeen(senderId, receiverId);
+        // 1. Try to Update Database
+        // We capture the result (True = Updated, False = Blocked by Privacy)
+        boolean isUpdated = chatService.markMessagesAsSeen(senderId, receiverId);
 
-    // 2. ONLY notify the Sender if the database was actually updated
-    if (isUpdated) {
-        messagingTemplate.convertAndSend(
-            "/queue/read/" + senderId, 
-            Map.of("receiverId", receiverId, "status", "SEEN")
-        );
+        // 2. ONLY notify the Sender if the database was actually updated
+        if (isUpdated) {
+            messagingTemplate.convertAndSend(
+                    "/queue/read/" + senderId,
+                    Map.of("receiverId", receiverId, "status", "SEEN"));
+        }
     }
-}
+
+    @GetMapping("/api/chat/unread-senders/{userId}")
+    @ResponseBody
+    public List<String> getUnreadSenders(@PathVariable String userId) {
+        return chatService.getSendersWithUnreadMessages(userId);
+    }
 }

@@ -1,8 +1,8 @@
 let stompClient = null;
-let currentChatUserId = null; 
+let currentChatUserId = null;
 let currentChatUserName = null;
 let currentLoggedInUserId = null;
-let typingTimeout = null; 
+let typingTimeout = null;
 
 // --- WEBSOCKET CONNECTION ---
 function connectWebSocket(userId) {
@@ -19,9 +19,9 @@ function connectWebSocket(userId) {
         return;
     }
     currentLoggedInUserId = userId;
-    const socket = new SockJS('/ws'); 
-    stompClient = Stomp.over(socket); 
-    stompClient.debug = null; 
+    const socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null;
 
     const headers = {
         'Authorization': 'Bearer ' + token
@@ -31,21 +31,45 @@ function connectWebSocket(userId) {
         console.log('Connected to WebSocket as ' + userId);
 
         // 1. Subscribe to Messages
+        // 1. Subscribe to Messages
         stompClient.subscribe('/queue/messages/' + userId, function (message) {
             const chatMessage = JSON.parse(message.body);
 
-            // FIX 1: This logic MUST be inside the subscription callback
+            // Logic: If I am the sender, remove temp message
             if (chatMessage.senderId === currentLoggedInUserId) {
-                // Find and remove pending messages (Optimistic UI cleanup)
                 const pendingMsgs = document.querySelectorAll('[id^="temp-"]');
                 if (pendingMsgs.length > 0) {
-                    pendingMsgs[pendingMsgs.length - 1].remove(); 
+                    pendingMsgs[pendingMsgs.length - 1].remove();
                 }
             }
 
-            const modal = document.getElementById('chatModal');
-            if (modal && !modal.classList.contains('hidden')) {
+            // Logic: Check if Chat Modal is OPEN for this specific user
+            const isChattingWithContact = (chatMessage.senderId === currentChatUserId) ||
+                (chatMessage.senderId === currentLoggedInUserId && chatMessage.receiverId === currentChatUserId);
+
+            const isModalVisible = !document.getElementById('chatModal').classList.contains('hidden');
+
+            if (isChattingWithContact && isModalVisible) {
+                // Render the message immediately
                 displayMessage(chatMessage);
+
+                // If it's an incoming message, mark it as read immediately
+                if (chatMessage.senderId === currentChatUserId) {
+                    sendReadReceipt(chatMessage.senderId);
+                }
+            } else {
+                // If chat is NOT open (or talking to someone else)
+                if (chatMessage.senderId !== currentLoggedInUserId) {
+                    // Update badges only for incoming messages
+                    updateGlobalUnreadCount();
+
+                    // Show Blue Dot on specific contact
+                    const contactBtn = document.querySelector(`.contact-chat-btn[data-userid="${chatMessage.senderId}"]`);
+                    if (contactBtn) {
+                        const dot = contactBtn.querySelector('.unread-dot');
+                        if (dot) dot.classList.remove('hidden');
+                    }
+                }
             }
         });
 
@@ -53,7 +77,7 @@ function connectWebSocket(userId) {
         stompClient.subscribe('/queue/read/' + userId, function (message) {
             const data = JSON.parse(message.body);
             if (currentChatUserId && data.receiverId === currentChatUserId) {
-                markAllMessagesAsSeenUI(); 
+                markAllMessagesAsSeenUI();
             }
         });
 
@@ -80,7 +104,7 @@ function connectWebSocket(userId) {
 }
 
 function disconnectWebSocket() {
-    if (stompClient !== null) { 
+    if (stompClient !== null) {
         stompClient.send("/app/chat.disconnect", {}, JSON.stringify({
             userId: currentLoggedInUserId
         }));
@@ -103,7 +127,7 @@ async function openChatModal(contactEmail, contactName, contactId, isUnknown = f
             addBtn.classList.add('hidden');
         }
     }
-    
+
     if (!currentLoggedInUserId) {
         const userIdElement = document.getElementById('loggedInUserId');
         if (userIdElement && userIdElement.value) {
@@ -115,7 +139,7 @@ async function openChatModal(contactEmail, contactName, contactId, isUnknown = f
 
     try {
         const url = `/api/contact/is-user/${encodeURIComponent(contactEmail)}`;
-        const response = await fetch(url); 
+        const response = await fetch(url);
         const data = await response.json();
 
         if (!data.isUser) {
@@ -129,7 +153,7 @@ async function openChatModal(contactEmail, contactName, contactId, isUnknown = f
         // Ensure WebSocket is connected
         if (!stompClient || !stompClient.connected) {
             connectWebSocket(currentLoggedInUserId);
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         // UI Updates
@@ -149,16 +173,29 @@ async function openChatModal(contactEmail, contactName, contactId, isUnknown = f
         modal.classList.add('flex');
         document.getElementById('messageInput').focus();
 
-    } catch (error) { 
+    } catch (error) {
         console.error('Error opening chat:', error);
     }
 }
 
 function closeChatModal() {
+    // 1. Hide the dot for the user we just finished talking to
+    if (currentChatUserId) {
+        const contactBtn = document.querySelector(`.contact-chat-btn[data-userid="${currentChatUserId}"]`);
+        if (contactBtn) {
+            const dot = contactBtn.querySelector('.unread-dot');
+            if (dot) dot.classList.add('hidden');
+        }
+    }
+
+    // 2. Existing closing logic
     document.getElementById('chatModal').classList.add('hidden');
     document.getElementById('chatModal').classList.remove('flex');
     currentChatUserId = null;
     currentChatUserName = null;
+
+    // Optional: Update global badge since we just read messages
+    updateGlobalUnreadCount();
 }
 
 // --- MESSAGE SENDING & DISPLAY ---
@@ -166,11 +203,11 @@ function closeChatModal() {
 function sendMessage() {
     const input = document.getElementById('messageInput');
     const content = input.value.trim();
-    
-    if (!content) return; 
-    
+
+    if (!content) return;
+
     const tempId = "temp-" + Date.now();
-    
+
     // Create temp message object
     const tempMessage = {
         senderId: currentLoggedInUserId,
@@ -178,12 +215,12 @@ function sendMessage() {
         content: content,
         type: 'TEXT',
         timestamp: new Date().toISOString(),
-        status: 'PENDING' 
+        status: 'PENDING'
     };
 
     // Render immediately (Optimistic UI)
     displayMessage(tempMessage, true, tempId);
-    
+
     input.value = '';
 
     if (stompClient && stompClient.connected) {
@@ -195,7 +232,7 @@ function sendMessage() {
                 type: 'TEXT',
                 timestamp: new Date().toISOString()
             };
-            
+
             stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
         } catch (error) {
             console.error("Send failed", error);
@@ -211,13 +248,13 @@ function sendMessage() {
 function displayMessage(message, animate = true, tempId = null) {
     const messagesDiv = document.getElementById('chatMessages');
     const isSender = message.senderId === currentLoggedInUserId;
-    
+
     // If tempId is provided use it, otherwise use message ID from DB
     // Note: message.id might be null for temp messages, that's fine
     const messageElementId = tempId || `msg-${message.id}`;
-    
+
     let statusIcon = '';
-    
+
     if (isSender) {
         if (message.status === 'PENDING') {
             statusIcon = `<i class="fa-regular fa-clock text-[10px] text-gray-400" title="Sending..."></i>`;
@@ -232,7 +269,7 @@ function displayMessage(message, animate = true, tempId = null) {
 
     const messageDiv = document.createElement('div');
     if (tempId) messageDiv.id = tempId;
-    
+
     messageDiv.className = `flex ${isSender ? 'justify-end' : 'justify-start'} ${animate ? 'animate-fadeIn' : ''} mb-2`;
 
     const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
@@ -271,7 +308,7 @@ function displayMessage(message, animate = true, tempId = null) {
         contentHtml = `<p class="font-sans text-sm leading-relaxed break-words block">${escapeHtml(rawContent)}</p>`;
     }
 
-    
+
     messageDiv.innerHTML = `
         <div class="max-w-[80%] lg:max-w-[70%]">
             <div class="${isSender ? senderClasses : receiverClasses} px-4 py-2 shadow-sm">
@@ -288,7 +325,7 @@ function displayMessage(message, animate = true, tempId = null) {
 
     messagesDiv.appendChild(messageDiv);
     scrollToBottom();
-    
+
     // Read Receipt Logic for Receiver
     if (!isSender && currentChatUserId === message.senderId) {
         sendReadReceipt(message.senderId);
@@ -313,10 +350,10 @@ function markMessageAsFailed(tempId) {
 
 function sendReadReceipt(senderId) {
     if (!stompClient || !stompClient.connected) return;
-    
+
     stompClient.send("/app/chat.read", {}, JSON.stringify({
-        senderId: senderId, 
-        receiverId: currentLoggedInUserId 
+        senderId: senderId,
+        receiverId: currentLoggedInUserId
     }));
 }
 
@@ -334,8 +371,8 @@ async function loadChatHistory(userId1, userId2) {
         const response = await fetch(`/api/chat/history/${userId1}/${userId2}`);
         const messages = await response.json();
         messages.forEach(message => displayMessage(message, false));
-        scrollToBottom(); 
-    } catch (error) { 
+        scrollToBottom();
+    } catch (error) {
         console.error('Error loading chat history:', error);
     }
 }
@@ -349,12 +386,12 @@ function handleTyping() {
 }
 
 function showTypingAnimation() {
-    const indicator = document.getElementById('headerTypingIndicator'); 
-    const statusText = document.getElementById('chatUserStatus');       
+    const indicator = document.getElementById('headerTypingIndicator');
+    const statusText = document.getElementById('chatUserStatus');
 
     if (indicator) {
         indicator.classList.remove('hidden');
-        if (statusText) statusText.classList.add('hidden'); 
+        if (statusText) statusText.classList.add('hidden');
 
         if (typingTimeout) clearTimeout(typingTimeout);
 
@@ -386,10 +423,10 @@ function updateUserStatus(userId, status) {
         const cleanStatus = String(status).trim().toUpperCase();
 
         if (cleanStatus === 'ONLINE') {
-            statusDot.classList.add('bg-green-500'); 
+            statusDot.classList.add('bg-green-500');
             statusDot.title = "Online";
         } else {
-            statusDot.classList.add('bg-gray-400'); 
+            statusDot.classList.add('bg-gray-400');
             statusDot.title = "Offline";
         }
     }
@@ -400,7 +437,7 @@ function updateUserStatus(userId, status) {
             const cleanStatus = String(status).trim().toUpperCase();
             if (cleanStatus === 'ONLINE') {
                 statusText.textContent = 'online';
-                statusText.className = 'text-xs text-green-100 font-bold'; 
+                statusText.className = 'text-xs text-green-100 font-bold';
             } else {
                 statusText.textContent = 'offline';
                 statusText.className = 'text-xs text-green-100 font-bold';
@@ -430,8 +467,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (userIdElement && userIdElement.value) {
         currentLoggedInUserId = userIdElement.value;
         connectWebSocket(currentLoggedInUserId);
+        updateGlobalUnreadCount(); // Update sidebar badges immediately
     }
 
+    // --- 1. HANDLE STATUS DOTS (Online/Offline) ---
     const dots = document.querySelectorAll('.user-status-dot');
     dots.forEach(dot => {
         const email = dot.getAttribute('data-email');
@@ -445,21 +484,49 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .then(response => {
-                     if (!response) return;
-                     const contentType = response.headers.get("content-type");
-                     if (contentType && contentType.includes("application/json")) {
-                         return response.json().then(d => d.status);
-                     } else {
-                         return response.text();
-                     }
+                    if (!response) return;
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return response.json().then(d => d.status);
+                    } else {
+                        return response.text();
+                    }
                 })
                 .then(status => {
-                    if(status && dot.id) {
+                    if (status && dot.id) {
                         const userId = dot.id.replace('status-dot-', '');
                         updateUserStatus(userId, status);
                     }
                 })
-                .catch(err => {});
+                .catch(err => { });
+        }
+    });
+
+    // --- 2. MAP CHAT BUTTONS & UPDATE BLUE DOTS ---
+    const chatBtns = document.querySelectorAll('.contact-chat-btn');
+    
+    // Create an array of promises to handle the async fetching
+    const mappingPromises = Array.from(chatBtns).map(btn => {
+        const email = btn.getAttribute('data-email');
+        if (email) {
+            return fetch(`/api/contact/is-user/${encodeURIComponent(email)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isUser && data.userId) {
+                        // Attach the User ID to the button
+                        btn.setAttribute('data-userid', data.userId);
+                    }
+                })
+                .catch(err => console.error("Error mapping contact to user", err));
+        }
+        return Promise.resolve();
+    });
+
+    // Wait for ALL buttons to be mapped before checking for unread messages
+    Promise.all(mappingPromises).then(() => {
+        // Now that buttons have data-userid, we can find them and show dots
+        if (currentLoggedInUserId) {
+            updateUnreadDots(); 
         }
     });
 });
@@ -470,11 +537,11 @@ window.addEventListener('beforeunload', function () {
 
 // File Upload Logic
 async function handleFileUpload(inputElement) {
-    const file = inputElement.files[0]; 
+    const file = inputElement.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file); 
+    formData.append("file", file);
 
     try {
         const response = await fetch('/api/chat/upload', {
@@ -485,7 +552,7 @@ async function handleFileUpload(inputElement) {
         if (response.ok) {
             const data = await response.json();
             const fileUrl = data.url;
-            const fileName = file.name; 
+            const fileName = file.name;
 
             const isImage = file.type.startsWith('image/');
             let messageContent = "";
@@ -513,8 +580,68 @@ function sendFileMessage(contentString) {
         senderId: currentLoggedInUserId,
         receiverId: currentChatUserId,
         content: contentString,
-        type: 'TEXT', 
+        type: 'TEXT',
         timestamp: new Date().toISOString()
     };
     stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+}
+
+// Add this helper function to chat.js
+async function updateGlobalUnreadCount() {
+    if (!currentLoggedInUserId) return;
+
+    try {
+        const response = await fetch(`/api/chat/unread/${currentLoggedInUserId}`);
+        const data = await response.json();
+        
+        // 1. Update CONTACTS Badge (Red)
+        const contactsBadge = document.getElementById('total-unread-count');
+        if (contactsBadge) {
+            if (data.contactsUnread > 0) {
+                contactsBadge.textContent = data.contactsUnread;
+                contactsBadge.classList.remove('hidden');
+            } else {
+                contactsBadge.classList.add('hidden');
+            }
+        }
+
+        // 2. Update REQUESTS Badge (Blue)
+        const requestsBadge = document.getElementById('total-requests-count');
+        if (requestsBadge) {
+            if (data.requestsUnread > 0) {
+                requestsBadge.textContent = data.requestsUnread;
+                requestsBadge.classList.remove('hidden');
+            } else {
+                requestsBadge.classList.add('hidden');
+            }
+        }
+
+    } catch (error) {
+        console.error("Error updating unread counts:", error);
+    }
+}
+
+// Add this helper function
+async function updateUnreadDots() {
+    if (!currentLoggedInUserId) return;
+
+    try {
+        // 1. Get list of user IDs who have unread messages
+        const response = await fetch(`/api/chat/unread-senders/${currentLoggedInUserId}`);
+        const unreadSenderIds = await response.json(); // Array of Strings, e.g. ["user123", "user456"]
+
+        // 2. Loop through the list and turn on the dots
+        unreadSenderIds.forEach(senderId => {
+            // Find the button for this specific sender
+            const contactBtn = document.querySelector(`.contact-chat-btn[data-userid="${senderId}"]`);
+            
+            if (contactBtn) {
+                const dot = contactBtn.querySelector('.unread-dot');
+                if (dot) dot.classList.remove('hidden');
+            }
+        });
+
+    } catch (error) {
+        console.error("Error updating unread dots:", error);
+    }
 }

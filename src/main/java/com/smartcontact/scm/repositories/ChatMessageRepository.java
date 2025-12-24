@@ -27,6 +27,6 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
     
     // Keep these for your unread counts
     long countByReceiverIdAndStatus(String receiverId, ChatMessage.MessageStatus status);
-    
+    List<ChatMessage> findByReceiverIdAndStatus(String userId,ChatMessage.MessageStatus status);
     
 }

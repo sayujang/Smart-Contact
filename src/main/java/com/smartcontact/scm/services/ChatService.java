@@ -4,6 +4,7 @@ import com.smartcontact.scm.entities.ChatMessage;
 import com.smartcontact.scm.entities.User;
 import com.smartcontact.scm.entities.UserStatus;
 import java.util.List;
+import java.util.Map;
 
 public interface ChatService {
     
@@ -23,4 +24,6 @@ public interface ChatService {
     boolean isUserOnline(String userId);
     List<User> getUnknownUsers(String currentUserId);
     boolean markMessagesAsSeen(String senderId, String receiverId);
+    Map<String, Long> getUnreadCountsSplit(String userId);
+    List<String> getSendersWithUnreadMessages(String receiverId);
 }

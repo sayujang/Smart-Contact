@@ -354,13 +354,22 @@
                                                     <i class="fa-solid fa-eye"></i>
                                                 </button>
 
-                                                <!-- Chat Button -->
                                                 <button
                                                     th:attr="data-email=*{email},data-name=*{name},data-contact-id=*{id}"
                                                     onclick="openChatModal(this.getAttribute('data-email'), this.getAttribute('data-name'), this.getAttribute('data-contact-id'))"
-                                                    class="action-btn w-9 h-9 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800 text-green-600 dark:text-green-400"
+                                                    class="contact-chat-btn relative action-btn w-9 h-9 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center hover:bg-green-200 dark:hover:bg-green-800 text-green-600 dark:text-green-400"
                                                     title="Start chat">
+
                                                     <i class="fa-solid fa-comment"></i>
+
+                                                    <span
+                                                        class="unread-dot hidden absolute -top-1 -right-1 flex h-3 w-3">
+                                                        <span
+                                                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                        <span
+                                                            class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                                    </span>
+
                                                 </button>
                                             </div>
                                         </td>
