@@ -1,4 +1,4 @@
-Collecting workspace information# Smart Contact Manager (SCM)
+Smart Contact Manager (SCM)
 
 ## Overview
 
