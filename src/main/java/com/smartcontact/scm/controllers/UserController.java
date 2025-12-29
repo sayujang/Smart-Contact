@@ -49,7 +49,7 @@ public class UserController {
         return "user/settings";
     }
 
-    // 2. Handle Profile Update (Image, Name, Phone, About)
+    //handle profile update
     @PostMapping("/settings/update")
 public String updateProfile(
         @ModelAttribute User userForm,
@@ -61,7 +61,7 @@ public String updateProfile(
     User oldUser = userService.getUserByEmail(username);
 
     try {
-        // 1. Update the User Object
+        //update user object
         oldUser.setName(userForm.getName());
         oldUser.setPhoneNumber(userForm.getPhoneNumber());
         oldUser.setAbout(userForm.getAbout());
@@ -72,10 +72,10 @@ public String updateProfile(
             oldUser.setProfilePic(imageUrl);
         }
 
-        // 2. Save User to DB
+        //save to db
         userService.updateUser(oldUser);
 
-        // 3. SYNC CHANGES TO CONTACTS (Add this line)
+        //sycnc changes to contact
         // This will find everyone else's contact list that has this email 
         // and update the name, phone, and pic.
         contactService.syncUserChangesToContacts(oldUser);
@@ -94,7 +94,7 @@ public String updateProfile(
     return "redirect:/user/settings";
 }
 
-    // 3. Handle Password Change
+    //handle password change
     @PostMapping("/settings/change-password")
 public String changePassword(
         @RequestParam(value = "oldPassword", required = false) String oldPassword,
@@ -105,8 +105,7 @@ public String changePassword(
     String username = Helper.getEmailOfLoggedInUser(authentication);
     User user = userService.getUserByEmail(username);
 
-    // CASE 1: Any Social Login (Google, GitHub, Facebook, etc.)
-    // They don't have an old password to verify.
+    //for oauth2 login no password to verify
     if (user.getProvider() != Providers.SELF) {
         user.setPassword(passwordEncoder.encode(newPassword));
         userService.updateUser(user);
@@ -118,14 +117,15 @@ public String changePassword(
         return "redirect:/user/settings";
     }
 
-    // CASE 2: Self (Email/Password) Users
-    // Must verify old password
+    //for self registered, old password must be verified
     if (user.getProvider() == Providers.SELF) {
         if (oldPassword == null || oldPassword.isEmpty()) {
-            // ... handle missing old password error
+           session.setAttribute("message", Message.builder()
+                .content("Add the missing old password!")
+                .type(MessageType.red).build());
             return "redirect:/user/settings";
         }
-
+        //passwordEncdoer rehashes the old password from form login to compare with stored hashed password
         if (passwordEncoder.matches(oldPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
             userService.updateUser(user);
@@ -142,8 +142,8 @@ public String changePassword(
     return "redirect:/user/settings";
 }
 
-    // 4. Handle Account Deletion
-    @GetMapping("/settings/delete") // In production, use POST/DELETE method for security
+    //handles account deletion
+    @PostMapping("/settings/delete") 
     public String deleteAccount(Authentication authentication, HttpSession session) {
         String username = Helper.getEmailOfLoggedInUser(authentication);
         User user = userService.getUserByEmail(username);

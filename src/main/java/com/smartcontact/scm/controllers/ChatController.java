@@ -129,7 +129,7 @@ public class ChatController {
         return chatService.getConversationHistory(userId1, userId2);
     }
 
-    @GetMapping("/api/chat/status/{userId}") // Ensure path matches your JS
+    @GetMapping("/api/chat/status/{userId}") 
     @ResponseBody
     public Map<String, Object> getUserStatus(@PathVariable String userId, Authentication authentication) {
         String myEmail = Helper.getEmailOfLoggedInUser(authentication);

@@ -24,17 +24,17 @@ public class FileUploadController {
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            // 1. Create unique filename
+            //create unique filename
             String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path path = Paths.get(UPLOAD_DIR + fileName);
             
-            // 2. Ensure directory exists
+            //ensures directory exists
             Files.createDirectories(path.getParent());
             
-            // 3. Save file
+            //savefile
             Files.write(path, file.getBytes());
             
-            // 4. Return the URL (assuming you serve static files from /uploads/)
+            //return url
             Map<String, String> response = new HashMap<>();
             response.put("url", "/uploads/" + fileName); // The link the frontend needs
             

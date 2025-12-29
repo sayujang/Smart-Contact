@@ -26,7 +26,7 @@ public class WebSocketEventListener {
         // So we don't need to do anything here.
         System.out.println("New Connection Detected");
     }
-    
+    //when websocket disconnects it sends sessionDisconnectEvent which is handled by this function
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
@@ -37,11 +37,10 @@ public class WebSocketEventListener {
         if (userId != null) {
             System.out.println("User Disconnected: " + userId);
             
-            // 2. Update Database to OFFLINE
+            //updates the database for specific userid to be offline
             chatService.updateUserStatus(userId, UserStatus.Status.OFFLINE, null);
             
-            // 3. Broadcast correct JSON payload to Frontend
-            // The frontend needs 'userId', not 'sessionId'
+            //broadcast json payload to frontend
             messagingTemplate.convertAndSend(
                 "/topic/user.status",
                 Map.of("userId", userId, "status", "OFFLINE")

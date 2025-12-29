@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class OauthAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+public class OauthAuthenticationSuccessHandler implements AuthenticationSuccessHandler {//AuthenticationSuccessHandler is an interface
     Logger logger=LoggerFactory.getLogger(OauthAuthenticationSuccessHandler.class);
     @Autowired
     private UserRepo userRepo;

@@ -43,7 +43,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws") //move from standard http  connection to websocket connection
+        registry.addEndpoint("/ws") //move from standard http  connection to websocket connection. client connects to /ws initially
                 .setAllowedOriginPatterns("*")
                 .withSockJS(); //incase web browser doesnt support websockets
     }
@@ -51,13 +51,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
-            //the presend method runs before every message from the client is processed in controllers
+            //the presend method runs before every message from the client is sent to the controllers
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 //extracts stomp header from the incoming message
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-                //only check security on the initial connect frame
+                //only check security on the initial connect frame not for every message sent
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     
                     List<String> authorization = accessor.getNativeHeader("Authorization");
@@ -69,31 +69,31 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         }
                     }
 
-                    // 1. If no token is provided, REJECT connection
+                    //if no token provided reject connections
                     if (token == null) {
-                        System.out.println("❌ WebSocket Connection Rejected: No Token Provided");
-                        return null; // <--- THIS BLOCKS THE CONNECTION
+                        System.out.println("WebSocket Connection Rejected: No Token Provided");
+                        return null; //this blocks connection
                     }
 
                     try {
                         String username = jwtHelper.getUsernameFromToken(token);
                         UserDetails userDetails = securityCustomUserDetailService.loadUserByUsername(username);
                         
-                        // 2. If token is valid, AUTHENTICATE the user
+                        //if token is valid authenticate user
                         if (jwtHelper.validateToken(token, userDetails.getUsername())) {
                             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());
-                            accessor.setUser(auth);
-                            System.out.println("✅ WebSocket Authenticated User: " + username);
+                            accessor.setUser(auth); //saves the user using the connection in websocket session so that it becomes available in principal
+                            System.out.println("WebSocket Authenticated User: " + username);
                         } else {
-                            // 3. If validation fails, REJECT
-                            System.out.println("❌ WebSocket Connection Rejected: Invalid Token Signature");
-                            return null; //THIS BLOCKS THE CONNECTION
+                            //if validation failed reject connection
+                            System.out.println("WebSocket Connection Rejected: Invalid Token Signature");
+                            return null; //this blocks connection
                         }
                     } catch (Exception e) {
-                         // 4. If any error occurs (expired, malformed), REJECT
-                         System.out.println("❌ WebSocket Connection Rejected: Token Error -> " + e.getMessage());
-                         return null; //THIS BLOCKS THE CONNECTION
+                         //if any error occurs reject
+                         System.out.println("WebSocket Connection Rejected: Token Error ==> " + e.getMessage());
+                         return null; //this blocks connection
                     }
                 }
 

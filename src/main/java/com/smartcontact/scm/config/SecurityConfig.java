@@ -37,24 +37,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(authorize -> {
-            // WebSocket endpoints - must be accessible
+            // webSocket endpoints must be accessible
             authorize.requestMatchers("/ws/**").permitAll();
             //it misses stomp message security as these are not real http endpoints
             authorize.requestMatchers("/app/**").permitAll();
             authorize.requestMatchers("/topic/**").permitAll();
             authorize.requestMatchers("/queue/**").permitAll();
             
-            // Chat API endpoints - authenticated users only
+            //chat api endpoints for authenticated users only
             authorize.requestMatchers("/api/chat/**").authenticated();
             authorize.requestMatchers("/api/contact/is-user/**").authenticated();
             
-            // User pages - authenticated
+            //user pages authenticated
             authorize.requestMatchers("/user/**").authenticated();
             authorize.requestMatchers("/auth/**", "/do-register", "/register").permitAll();
-            // Everything else - permit all
+            //permit everythingelse
             authorize.anyRequest().permitAll();
         });
-        
+        //tells spring that i have my own custom login page at /login
         httpSecurity.formLogin(form -> {
             form.loginPage("/login");
             form.loginProcessingUrl("/authenticate");
@@ -65,14 +65,14 @@ public class SecurityConfig {
             form.passwordParameter("password");
         });
         
-        // CSRF disabled - good for WebSocket
+        //csrf disabledbecause tricky to manage for WebSocket
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         
         httpSecurity.logout(logout -> {
             logout.logoutUrl("/do-logout");
             logout.logoutSuccessUrl("/login?logout=true");
         });
-        
+        //if its oauth2 login we pass it to our custom handler so that we can save them in the database first
         httpSecurity.oauth2Login(login -> {
             login.loginPage("/login");
             login.successHandler(oauthAuthenticationSuccessHandler);

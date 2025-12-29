@@ -15,11 +15,11 @@ function connectWebSocket(userId) {
     const tokenInput = document.getElementById("userJwt");
     const token = tokenInput ? tokenInput.value : null;
     if (!token) {
-        console.error("❌ Fatal Error: JWT Token not found.");
+        console.error("Fatal Error: JWT Token not found.");
         return;
     }
     currentLoggedInUserId = userId;
-    const socket = new SockJS('/ws');
+    const socket = new SockJS('/ws'); //this we configured in registerstompendpoints
     stompClient = Stomp.over(socket);
     stompClient.debug = null;
 

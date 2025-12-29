@@ -12,9 +12,9 @@ public class ChatMessage {
     
     @Id
     private String id;
-    private String senderId;      // User ID who sent the message
-    private String receiverId;    // User ID who receives the message
-    private String content;       // Message text
+    private String senderId;      //user who sent the message
+    private String receiverId;    //user who receives the message
+    private String content;       //message text
     private LocalDateTime timestamp;
     private MessageStatus status=MessageStatus.SENT; 
     private MessageType type;     // TEXT, IMAGE, FILE
