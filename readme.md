@@ -1,160 +1,275 @@
-## 1️⃣ `@OneToMany(fetch = FetchType.LAZY)`
+Collecting workspace information# Smart Contact Manager (SCM)
 
-**Scenario:** A `User` has many `Contact`s.
+## Overview
 
-```java
-@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-private List<Contact> contacts;
+Smart Contact Manager (SCM) is a comprehensive web application designed to help users manage their contacts efficiently. Built with Spring Boot and modern web technologies, SCM provides a secure, cloud-based platform for storing, organizing, and sharing contact information with enhanced features like QR code sharing, real-time messaging, and OAuth2 authentication.
+
+## Features
+
+### Core Features
+
+- **User Authentication & Authorization**
+  - Email/password-based registration and login
+  - OAuth2 integration (Google and GitHub)
+  - Email verification for new accounts
+  - Secure password management with BCrypt encryption
+
+- **Contact Management**
+  - Create, read, update, and delete contacts
+  - Store detailed contact information (name, email, phone, address, description)
+  - Add multiple social media links to contacts
+  - Mark contacts as favorites
+  - Search contacts by name, email, or phone number
+  - Pagination support for contact lists
+
+- **QR Code Sharing**
+  - Generate unique QR codes for user profiles
+  - Share contacts via QR code scanning
+  - Automatic mutual contact creation
+
+- **Real-Time Messaging**
+  - WebSocket-based instant messaging
+  - Message delivery and read status tracking
+  - Typing indicators
+  - File sharing capabilities
+  - Contact availability status
+
+- **User Profile Management**
+  - Customizable profile pictures (Cloudinary integration)
+  - User information editing
+  - Privacy settings
+  - Account deletion option
+
+- **Security Features**
+  - CSRF protection
+  - JWT token support
+  - Role-based access control
+  - Email token verification
+  - Secure session management
+
+## Technology Stack
+
+### Backend
+
+- **Framework:** Spring Boot 3.x
+- **Language:** Java 17+
+- **Database:** 
+  - Relational: JPA/Hibernate with SQL database
+  - NoSQL: MongoDB for chat messages
+- **Security:** Spring Security with OAuth2
+- **Authentication:** JWT (JSON Web Tokens)
+- **Real-Time Communication:** WebSocket with Spring Messaging
+
+### Frontend
+
+- **Template Engine:** Thymeleaf
+- **Styling:** Tailwind CSS
+- **CSS Framework:** Flowbite
+- **Icons:** Font Awesome
+- **Build Tool:** PostCSS
+
+### External Services
+
+- **Cloud Storage:** Cloudinary (for image uploads)
+- **OAuth Providers:** Google and GitHub
+- **Email Service:** Spring Mail
+
+### Build & Dependency Management
+
+- **Build Tool:** Maven
+- **Package Manager:** npm (for frontend dependencies)
+
+## Project Structure
+
+```
+src/
+├── main/
+│   ├── java/com/smartcontact/scm/
+│   │   ├── controllers/          # REST and MVC controllers
+│   │   ├── services/             # Business logic layer
+│   │   ├── repositories/         # Data access layer
+│   │   ├── entities/             # JPA entities and MongoDB documents
+│   │   ├── config/               # Configuration classes
+│   │   ├── forms/                # Form DTOs
+│   │   ├── Helpers/              # Utility classes and enums
+│   │   └── Validators/           # Custom validation annotations
+│   └── resources/
+│       ├── templates/            # Thymeleaf HTML templates
+│       ├── static/               # CSS, JavaScript, and images
+│       └── application.properties # Configuration file
+└── test/                         # Unit and integration tests
 ```
 
-**Behavior:**
+## Installation & Setup
 
-* The **entity (`User`) itself** is fully loaded immediately when you call `session.find(User.class, id)`.
-* The **collection (`contacts`)** is lazy:
+### Prerequisites
 
-  * Hibernate does **not load contacts immediately**.
-  * It creates a **proxy collection**.
-  * SQL query for contacts is fired **only when you access `user.getContacts()`**.
-* Example:
+- Java 17 or higher
+- Maven 3.8+
+- Node.js and npm
+- MongoDB (for chat functionality)
+- SQL Database (MySQL, PostgreSQL, etc.)
+- Cloudinary account (for image uploads)
 
-```java
-User u = session.find(User.class, 101); // Query only for User
-List<Contact> contacts = u.getContacts(); // Query fired now for contacts
-```
+### Backend Setup
 
-* Important: If you never call `getContacts()`, **no SQL** for contacts is executed.
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd scm
+   ```
 
-**Key point:** Lazy is **for a collection inside an entity**, not the entity itself.
+2. Configure application properties:
+   - Edit application.properties
+   - Set database connection details
+   - Configure Cloudinary credentials
+   - Set up OAuth2 credentials for Google and GitHub
+   - Configure email service settings
 
----
+3. Build the project:
+   ```bash
+   mvn clean install
+   ```
 
-## 2️⃣ `session.byId(Student.class).getReference(id)`
+4. Run the application:
+   ```bash
+   mvn spring-boot:run
+   ```
 
-**Scenario:** You are loading a single entity lazily.
+### Frontend Setup
 
-```java
-Student s = session.byId(Student.class).getReference(101);
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-**Behavior:**
+2. Build Tailwind CSS:
+   ```bash
+   npm run build
+   ```
 
-* The **entity itself** is lazy:
+3. Watch for changes (during development):
+   ```bash
+   npm run watch
+   ```
 
-  * Hibernate returns a **proxy object**, not the fully initialized `Student`.
-  * **No SQL is fired yet**.
-* SQL query is fired **only when you access a property** like `s.getName()` or `s.getEmail()`.
-* Example:
+## Configuration
 
-```java
-Student s = session.byId(Student.class).getReference(101); // No query yet
-System.out.println(s.getName()); // Query fired now for this Student
-```
+### Application Properties
 
-**Key point:** Lazy is **for the entity itself**, not a collection.
+Key configuration variables to set in `application.properties`:
 
----
+- Database connection strings
+- Cloudinary API credentials
+- OAuth2 client IDs and secrets
+- Email service configuration
+- JWT token expiration time
+- MongoDB connection URI
 
-## ⚖️ Comparison Table
+## API Endpoints
 
-| Feature                    | `@OneToMany(fetch = LAZY)`               | `getReference()`                                   |
-| -------------------------- | ---------------------------------------- | -------------------------------------------------- |
-| What is lazy               | Collection inside entity                 | The entity itself                                  |
-| Entity loaded immediately? | Yes (User)                               | No (Student proxy)                                 |
-| SQL fired                  | Only when collection is accessed         | Only when entity property is accessed              |
-| Proxy used?                | Proxy collection (`PersistentBag`, etc.) | Proxy entity (`Student` subclass)                  |
-| Common use                 | Parent-child relationships               | Large entities, optional access, entity references |
+### Authentication
 
----
+- `POST /do-register` - User registration
+- `POST /login` - User login
+- `GET /auth/verify-email` - Email verification
 
-### 🔑 Takeaway
+### Contact Management
 
-* **Collection lazy (`OneToMany`)** → Entity is ready, collection not loaded yet.
-* **Entity lazy (`getReference`)** → Entity itself is not loaded yet, only a proxy exists.
+- `GET /user/contact` - View all contacts
+- `POST /user/contact/add` - Create new contact
+- `GET /user/contact/{id}` - Get contact details
+- `POST /user/contact/{id}` - Update contact
+- `POST /user/contact/{id}/delete` - Delete contact
+- `GET /user/contact/qrcode` - Generate QR code
+- `POST /user/contact/upload-qr` - Upload and scan QR code
 
-Think of it like this:
+### Messaging
 
-* `@OneToMany LAZY` → You have a **box**, the box is there but the **stuff inside the box** isn’t loaded yet.
-* `getReference()` → You don’t even have the **box yet**, just a **placeholder**; the box appears only when you try to open it.
+- `GET /api/chat/history/{userId1}/{userId2}` - Get chat history
+- `GET /api/chat/unread/{userId}` - Get unread message count
+- `GET /api/chat/unknown/{userId}` - Get users not in contacts
+- `POST /api/chat/upload` - Upload file in chat
 
-JSP → Placed under src/main/webapp/WEB-INF/views/
-Thymeleaf → Placed under src/main/resources/templates/
+### User Management
 
-Advantages of @Builder
+- `GET /user/profile` - View user profile
+- `POST /user/settings` - Update profile settings
+- `POST /user/settings/change-password` - Change password
+- `POST /user/delete-account` - Delete user account
 
-Readability – Each field is explicitly named.
+## WebSocket Events
 
-Optional fields – You can skip fields you don’t want to set.
+### Message Mapping
 
-Immutability friendly – Often used with @Getter and final fields.
+- `/app/chat.register` - Register user for messaging
+- `/app/chat.send` - Send message to contact
+- `/app/chat.typing` - Send typing indicator
+- `/app/chat.read` - Mark messages as read
 
-Avoids long constructors – No need to write multiple overloaded constructors.
-🧭 How Spring Finds That File
+### Subscription Topics
 
-Spring Boot (with Thymeleaf) uses a View Resolver behind the scenes — by default it’s configured like this:
+- `/queue/messages` - Receive messages
+- `/queue/read/{userId}` - Receive read receipts
+- `/queue/typing/{userId}` - Receive typing indicators
+- `/queue/status` - User status updates
 
-spring.thymeleaf.prefix = classpath:/templates/
-spring.thymeleaf.suffix = .html
+## Database Schema
 
-Full Login Flow (Simplified)
+### Key Entities
 
-User enters username + password in the login form.
+- **User** - User account information with OAuth provider details
+- **Contact** - Contact information linked to user
+- **SocialLink** - Social media profiles for contacts
+- **ChatMessage** - Real-time messages between users (MongoDB)
+- **UserStatus** - User online/offline status tracking
 
-Spring Security intercepts it.
+## Security Considerations
 
-It calls your AuthenticationProvider.
+- All passwords are encrypted using BCrypt
+- CSRF tokens are required for state-changing requests
+- OAuth2 integration handles secure third-party authentication
+- Email verification prevents account abuse
+- JWT tokens with expiration for websocket while sessions for user login
 
-That provider calls SecurityCustomUserDetailService.loadUserByUsername().
+## Troubleshooting
 
-That fetches user info from DB via UserRepo.
+### Common Issues
 
-Password is compared using BCryptPasswordEncoder.
+1. **Database Connection Failed**
+   - Verify database is running
+   - Check connection string in application.properties
+   - Ensure credentials are correct
 
-If valid → user is logged in and a session is created.
-CSRF stands for Cross-Site Request Forgery.
+2. **Cloudinary Upload Fails**
+   - Verify Cloudinary credentials
+   - Check API key and secret
+   - Ensure image file size is within limits
 
-It’s a type of web attack where a malicious website tricks a logged-in user into performing an unwanted action on another site — without their knowledge.
+3. **OAuth2 Login Not Working**
+   - Verify redirect URIs are configured correctly
+   - Check client ID and secret
+   - Ensure allowed redirect hosts match
 
-⚡ Example:
+4. **WebSocket Connection Issues**
+   - Check WebSocket configuration
+   - Verify firewall allows WebSocket connections
+   - Check browser console for connection errors
 
-Suppose a user is logged in to your site smartcontact.com.
+## Performance Optimization
 
-Now they visit a malicious site that secretly submits a form:
+- Implement pagination for large datasets
+- Use lazy loading for relationships
+- Cache frequently accessed data
+- Compress static assets
+- Optimize database queries with proper indexing
 
-<form action="https://smartcontact.com/do-logout" method="post">
-</form>
-<script>document.forms[0].submit();</script>
+## Future Enhancements
 
-
-If your app doesn’t have CSRF protection, that POST request could:
-
-Delete their account,
-
-Transfer money,
-
-Or log them out —
-all without the user realizing it.
-
-How oauth2 works in flow
-
-Client (your app) redirects user to Authorization Server (Google).
-
-User (Resource Owner) logs in and grants permission.
-
-Authorization Server issues a token to the Client.
-
-Client uses token to access Resource Server (user’s data).
-
-Client can now authenticate the user in your app without knowing their password.
-
-clientId: 1085426913365-mc8f0dmp90dos9fc6cvot1pebhgt3jvo.apps.googleusercontent.com
-client secret: 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
-
-"sub" is per user per provider
-
-Different users → Different sub values within the same provider.
-
-Different providers → Even the same person will have different sub values for each provider.
-sub identifies the end user not oauth2 client
-
-spring.security.oauth2.client.registration.google.scope=profile,email  tells google which information our apps want to access from the user
-
+- Contact groups and categories
+- Advanced search and filtering
+- Contact import/export functionality
+- Scheduled messaging
+- Voice and video calling
+- Contact backup and synchronization
+- Multi-language support
